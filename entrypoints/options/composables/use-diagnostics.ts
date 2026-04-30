@@ -49,13 +49,16 @@ export function useDiagnostics(storageService: StorageService) {
       diagnosticLog: data.diagnosticLog,
     };
 
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    // Use a data URI instead of blob URL to bypass chrome.downloads.
+    // Blob URL downloads fire onCreated → wake Service Worker → SW logs
+    // fresh startup entries → storage.onChanged replaces the UI log with
+    // new timestamps, making the original entries disappear.
+    const json = JSON.stringify(report, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(json)}`;
     const a = document.createElement('a');
-    a.href = url;
+    a.href = dataUri;
     a.download = `motrix-next-diagnostic-${Date.now()}.json`;
     a.click();
-    URL.revokeObjectURL(url);
   }
 
   return {

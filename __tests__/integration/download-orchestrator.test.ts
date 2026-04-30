@@ -297,7 +297,6 @@ describe('DownloadOrchestrator', () => {
     });
   });
 
-
   // ─── handleCreated — defensive fallback ────────────────
 
   describe('handleCreated — defensive fallback', () => {

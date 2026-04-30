@@ -77,16 +77,13 @@ describe('useDiagnostics', () => {
       migration: { from: 2, to: 2, migrated: false },
     });
 
-    // Mock browser APIs
-    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
-    const revokeObjectURL = vi.fn();
-    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
-
+    // Mock browser APIs — capture the data URI set on the anchor element.
+    let capturedHref = '';
     const clickFn = vi.fn();
     vi.stubGlobal('document', {
       createElement: vi.fn().mockReturnValue({
-        set href(_v: string) {
-          /* noop */
+        set href(v: string) {
+          capturedHref = v;
         },
         set download(_v: string) {
           /* noop */
@@ -94,15 +91,6 @@ describe('useDiagnostics', () => {
         click: clickFn,
       }),
     });
-    vi.stubGlobal(
-      'Blob',
-      class MockBlob {
-        public parts: unknown[];
-        constructor(parts: unknown[]) {
-          this.parts = parts;
-        }
-      },
-    );
     vi.stubGlobal('chrome', {
       runtime: {
         getManifest: () => ({ version: '1.0.1', manifest_version: 3 }),
@@ -115,10 +103,14 @@ describe('useDiagnostics', () => {
 
     await exportDiagnosticReport();
 
-    // Verify Blob was created with JSON content
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
-    const blobArg = createObjectURL.mock.calls[0]![0] as { parts: string[] };
-    const report = JSON.parse(blobArg.parts[0]!);
+    // Verify data URI was set (bypasses chrome.downloads)
+    expect(capturedHref).toMatch(/^data:application\/json;charset=utf-8,/);
+
+    // Parse the encoded JSON from the data URI
+    const jsonPayload = decodeURIComponent(
+      capturedHref.replace('data:application/json;charset=utf-8,', ''),
+    );
+    const report = JSON.parse(jsonPayload);
 
     // Verify report structure
     expect(report.exportedAt).toBeDefined();
@@ -133,7 +125,6 @@ describe('useDiagnostics', () => {
 
     // Verify download triggered
     expect(clickFn).toHaveBeenCalledTimes(1);
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
 
     vi.unstubAllGlobals();
   });
