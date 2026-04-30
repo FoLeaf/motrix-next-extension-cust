@@ -3,6 +3,7 @@ import { DownloadOrchestrator } from '@/lib/download/orchestrator';
 import type { OrchestratorDeps } from '@/lib/download/orchestrator';
 import type { DownloadSettings, SiteRule } from '@/shared/types';
 import { DEFAULT_DOWNLOAD_SETTINGS } from '@/shared/constants';
+import { DesktopApiClient } from '@/lib/api/desktop-client';
 
 // ─── Mock Types ─────────────────────────────────────────
 
@@ -47,7 +48,7 @@ function createMockDeps(overrides: Partial<OrchestratorDeps> = {}): Orchestrator
     getSiteRules: vi.fn().mockReturnValue([] as SiteRule[]),
     getTabUrl: vi.fn<() => Promise<string>>().mockResolvedValue('https://example.com/page'),
     openProtocolNewTask: vi
-      .fn<(url: string, referer: string, cookie: string) => Promise<void>>()
+      .fn<(url: string, referer: string, cookie: string, filename?: string) => Promise<void>>()
       .mockResolvedValue(undefined),
     ...overrides,
   };
@@ -96,6 +97,7 @@ describe('DownloadOrchestrator', () => {
         'https://cdn.example.com/913b9d40.zip',
         'https://example.com/page',
         '',
+        'file.zip',
       );
     });
 
@@ -384,6 +386,55 @@ describe('DownloadOrchestrator', () => {
         'https://example.com/page',
         '',
       );
+    });
+
+    it('does not forward generic download placeholder as HTTP API filename', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockResolvedValue({ action: 'queued' });
+      const apiDeps = createMockDeps({ desktopClient, openProtocolNewTask: undefined });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+          finalUrl: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+          filename: 'download',
+          mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        }),
+      );
+
+      expect(addDownload).toHaveBeenCalledWith({
+        url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+        referer: 'https://example.com/page',
+        cookie: undefined,
+      });
+    });
+
+    it('forwards meaningful unicode filename as HTTP API filename', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockResolvedValue({ action: 'queued' });
+      const apiDeps = createMockDeps({ desktopClient, openProtocolNewTask: undefined });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          url: 'https://cdn.example.com/hash',
+          finalUrl: 'https://cdn.example.com/hash',
+          filename: 'Итоги_2026.docx',
+          mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        }),
+      );
+
+      expect(addDownload).toHaveBeenCalledWith({
+        url: 'https://cdn.example.com/hash',
+        referer: 'https://example.com/page',
+        cookie: undefined,
+        filename: 'Итоги_2026.docx',
+      });
     });
 
     it('includes hasCookie: true in diagnostic context when cookies are collected', async () => {

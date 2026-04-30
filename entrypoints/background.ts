@@ -188,9 +188,15 @@ export default defineBackground(() => {
           };
         },
       }),
-    openProtocolNewTask: async (url: string, referer: string, cookie: string) => {
+    openProtocolNewTask: async (
+      url: string,
+      referer: string,
+      cookie: string,
+      filename?: string,
+    ) => {
       const params: Record<string, string> = { url, referer };
       if (cookie) params.cookie = cookie;
+      if (filename) params.filename = filename;
       const protocolUrl = buildProtocolUrl(ProtocolAction.NewTask, params);
       // Create tab for the protocol URL — active:true so the "Open MotrixNext?"
       // confirmation dialog gets focus and is visible to the user.

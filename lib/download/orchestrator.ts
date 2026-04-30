@@ -43,7 +43,12 @@ export interface OrchestratorDeps {
    * Fallback: route a URL to the desktop app via `motrixnext://new?url=...`
    * deep link. Used only when both HTTP API and wake+retry fail.
    */
-  openProtocolNewTask?: (url: string, referer: string, cookie: string) => Promise<void>;
+  openProtocolNewTask?: (
+    url: string,
+    referer: string,
+    cookie: string,
+    filename?: string,
+  ) => Promise<void>;
   /**
    * Callback fired when all routing paths fail and the download is lost.
    * The extension has already cancelled the browser download at this point.
@@ -61,6 +66,27 @@ interface DownloadItem {
   mime: string;
   byExtensionId?: string;
   state: string;
+}
+
+const GENERIC_FILENAME_HINTS = new Set(['download']);
+
+function extensionOf(filename: string): string {
+  const dot = filename.lastIndexOf('.');
+  if (dot <= 0 || dot === filename.length - 1) return '';
+  return filename.slice(dot + 1).toLowerCase();
+}
+
+function resolveFilenameHint(url: string, filename: string): string | undefined {
+  const trimmed = filename.trim();
+  if (!trimmed) return undefined;
+  if (GENERIC_FILENAME_HINTS.has(trimmed.toLowerCase())) return undefined;
+  const urlFilename = extractFilenameFromUrl(url);
+  if (urlFilename) {
+    const hintExt = extensionOf(trimmed);
+    const urlExt = extensionOf(urlFilename);
+    if (hintExt && urlExt && hintExt !== urlExt) return undefined;
+  }
+  return trimmed;
 }
 
 // ─── Orchestrator ───────────────────────────────────────
@@ -162,12 +188,19 @@ export class DownloadOrchestrator {
 
     // ─── Route to desktop app ───────────────────
     const effectiveUrl = item.finalUrl || item.url;
-    const displayName = item.filename || extractFilenameFromUrl(effectiveUrl) || 'download';
+    const filenameHint = resolveFilenameHint(effectiveUrl, item.filename);
+    const displayName = filenameHint || extractFilenameFromUrl(effectiveUrl) || 'download';
     const cookie = await this.collectCookies(effectiveUrl);
 
     await this.safeCancel(item.id);
 
-    const routed = await this.sendToDesktop(effectiveUrl, tabUrl, cookie, displayName);
+    const routed = await this.sendToDesktop(
+      effectiveUrl,
+      tabUrl,
+      cookie,
+      displayName,
+      filenameHint,
+    );
     if (!routed) {
       // Both paths failed — can't route to desktop
       this.deps.diagnosticLog.append({
@@ -190,10 +223,11 @@ export class DownloadOrchestrator {
    * @throws when no routing path is available
    */
   async sendUrl(url: string, tabUrl: string): Promise<string> {
-    const displayName = extractFilenameFromUrl(url) || url.split('/').pop() || 'download';
+    const filenameHint = extractFilenameFromUrl(url) ?? undefined;
+    const displayName = filenameHint || url.split('/').pop() || 'download';
     const cookie = await this.collectCookies(url);
 
-    const routed = await this.sendToDesktop(url, tabUrl, cookie, displayName);
+    const routed = await this.sendToDesktop(url, tabUrl, cookie, displayName, filenameHint);
     if (!routed) {
       throw new Error(
         'Desktop app routing unavailable: neither HTTP API nor protocol handler provided',
@@ -214,6 +248,7 @@ export class DownloadOrchestrator {
     referer: string,
     cookie: string,
     displayName: string,
+    filenameHint?: string,
   ): Promise<boolean> {
     // Primary: HTTP API
     if (this.deps.desktopClient) {
@@ -222,7 +257,7 @@ export class DownloadOrchestrator {
           url,
           referer: referer || undefined,
           cookie: cookie || undefined,
-          filename: displayName || undefined,
+          ...(filenameHint ? { filename: filenameHint } : {}),
         });
 
         this.deps.diagnosticLog.append({
@@ -271,7 +306,7 @@ export class DownloadOrchestrator {
                 url,
                 referer: referer || undefined,
                 cookie: cookie || undefined,
-                filename: displayName || undefined,
+                ...(filenameHint ? { filename: filenameHint } : {}),
               });
 
               this.deps.diagnosticLog.append({
@@ -320,7 +355,13 @@ export class DownloadOrchestrator {
 
     // Fallback: deep-link protocol
     if (this.deps.openProtocolNewTask) {
-      await this.deps.openProtocolNewTask(url, referer, cookie);
+      const protocolFilenameHint =
+        filenameHint !== extractFilenameFromUrl(url) ? filenameHint : undefined;
+      if (protocolFilenameHint) {
+        await this.deps.openProtocolNewTask(url, referer, cookie, protocolFilenameHint);
+      } else {
+        await this.deps.openProtocolNewTask(url, referer, cookie);
+      }
 
       this.deps.diagnosticLog.append({
         level: 'info',
