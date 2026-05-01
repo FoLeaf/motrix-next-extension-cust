@@ -2,7 +2,7 @@
   "name": "motrix-next-extension",
   "description": "Motrix Next Browser Extension — Send downloads to Motrix Next",
   "private": true,
-  "version": "1.1.12",
+  "version": "1.1.13",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -41,6 +41,7 @@
     "@types/chrome": "^0.1.38",
     "@types/content-disposition": "^0.5.9",
     "@types/picomatch": "^4.0.3",
+    "@vitest/coverage-v8": "4.1.2",
     "@vue/test-utils": "^2.4.6",
     "@wxt-dev/module-vue": "^1.0.3",
     "eslint": "^10.1.0",

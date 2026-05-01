@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Bağlantı zaman aşımı",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Tarayıcı indirme çubuğunu gizle",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Tarayıcı arayüzünü değiştirmeden önce isteğe bağlı indirme arayüzü izni ister",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Çerezleri ilet",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Kimlik doğrulamalı indirmeler için isteğe bağlı çerez ve site izinleri ister",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Tarayıcı indirme çubuğunu gizlemek için indirme arayüzü izni verin.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Çerezleri Motrix Next’e iletmek için çerez ve site izinleri verin.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

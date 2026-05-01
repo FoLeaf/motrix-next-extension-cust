@@ -3,6 +3,7 @@ import type { DiagnosticInput } from '@/lib/storage/diagnostic-log';
 import { evaluateFilterPipeline, createFilterPipeline } from './filter';
 import { decodeMimeEncodedWords, extractFilenameFromUrl } from '@/shared/url';
 import type { DesktopApiClient } from '@/lib/api/desktop-client';
+import { ApiAuthError } from '@/shared/errors';
 
 // ─── Dependency Interface ───────────────────────────────
 
@@ -43,12 +44,7 @@ export interface OrchestratorDeps {
    * Fallback: route a URL to the desktop app via `motrixnext://new?url=...`
    * deep link. Used only when both HTTP API and wake+retry fail.
    */
-  openProtocolNewTask?: (
-    url: string,
-    referer: string,
-    cookie: string,
-    filename?: string,
-  ) => Promise<void>;
+  openProtocolNewTask?: (url: string, referer: string, filename?: string) => Promise<void>;
   /**
    * Callback fired when all routing paths fail and the download is lost.
    * The extension has already cancelled the browser download at this point.
@@ -66,6 +62,7 @@ interface DownloadItem {
   mime: string;
   byExtensionId?: string;
   state: string;
+  referrer?: string;
 }
 
 const GENERIC_FILENAME_HINTS = new Set(['download']);
@@ -139,7 +136,7 @@ export class DownloadOrchestrator {
     }
 
     const settings = this.deps.getSettings();
-    const tabUrl = await this.deps.getTabUrl();
+    const tabUrl = item.referrer || (await this.deps.getTabUrl());
 
     // ─── Filter ─────────────────────────────────
     const ctx: FilterContext = {
@@ -274,6 +271,16 @@ export class DownloadOrchestrator {
         });
         return true;
       } catch (e) {
+        if (e instanceof ApiAuthError) {
+          this.deps.diagnosticLog.append({
+            level: 'error',
+            code: 'api_auth_failed',
+            message: `HTTP API authentication failed: ${e.message}`,
+            context: { url },
+          });
+          return false;
+        }
+
         // HTTP API failed — attempt wake + retry before falling back to deep-link
         this.deps.diagnosticLog.append({
           level: 'warn',
@@ -333,6 +340,16 @@ export class DownloadOrchestrator {
               context: { url },
             });
           } catch (wakeError) {
+            if (wakeError instanceof ApiAuthError) {
+              this.deps.diagnosticLog.append({
+                level: 'error',
+                code: 'api_auth_failed',
+                message: `HTTP API authentication failed after wake: ${wakeError.message}`,
+                context: { url },
+              });
+              return false;
+            }
+
             // Wake or retry-after-wake failed — log and fall through to deep-link
             this.deps.diagnosticLog.append({
               level: 'warn',
@@ -358,16 +375,16 @@ export class DownloadOrchestrator {
       const protocolFilenameHint =
         filenameHint !== extractFilenameFromUrl(url) ? filenameHint : undefined;
       if (protocolFilenameHint) {
-        await this.deps.openProtocolNewTask(url, referer, cookie, protocolFilenameHint);
+        await this.deps.openProtocolNewTask(url, referer, protocolFilenameHint);
       } else {
-        await this.deps.openProtocolNewTask(url, referer, cookie);
+        await this.deps.openProtocolNewTask(url, referer);
       }
 
       this.deps.diagnosticLog.append({
         level: 'info',
         code: 'download_routed',
         message: `Routed via deep-link: ${displayName}`,
-        context: { url, filename: displayName, hasCookie: cookie.length > 0 },
+        context: { url, filename: displayName, hasCookie: false },
       });
       return true;
     }
@@ -401,6 +418,9 @@ export class DownloadOrchestrator {
    * Collect browser cookies for the given URL.
    */
   private async collectCookies(url: string): Promise<string> {
+    if (!this.deps.getSettings().forwardCookies) {
+      return '';
+    }
     if (!this.deps.cookies) {
       return '';
     }

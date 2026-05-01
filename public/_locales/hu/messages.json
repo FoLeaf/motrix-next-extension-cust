@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "A kapcsolat időtúllépése",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Böngésző letöltési sávjának elrejtése",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "A böngésző felületének módosítása előtt opcionális letöltési felület engedélyt kér",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Cookie-k továbbítása",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Opcionális cookie- és webhelyengedélyeket kér hitelesített letöltésekhez",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Add meg a letöltési felület engedélyét a böngésző letöltési sávjának elrejtéséhez.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Add meg a cookie- és webhelyengedélyeket a cookie-k Motrix Next felé továbbításához.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

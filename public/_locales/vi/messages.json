@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Hết thời gian kết nối",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Ẩn thanh tải xuống của trình duyệt",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Yêu cầu quyền giao diện tải xuống tùy chọn trước khi thay đổi giao diện trình duyệt",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Chuyển tiếp cookie",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Yêu cầu quyền cookie và trang web tùy chọn cho các lượt tải xuống đã xác thực",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Cấp quyền giao diện tải xuống để ẩn thanh tải xuống của trình duyệt.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Cấp quyền cookie và trang web để chuyển tiếp cookie tới Motrix Next.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

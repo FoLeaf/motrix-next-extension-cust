@@ -8,7 +8,7 @@ export default defineConfig({
     include: ['__tests__/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['lib/**/*.ts', 'shared/**/*.ts', 'entrypoints/**/*.ts', 'entrypoints/**/*.vue'],
+      include: ['lib/**/*.ts', 'shared/**/*.ts', 'entrypoints/options/composables/**/*.ts'],
       exclude: ['**/*.d.ts', '**/*.test.ts'],
     },
   },

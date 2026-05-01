@@ -7,13 +7,16 @@ import {
   ContextMenuService,
   NotificationService,
   WakeService,
+  PermissionService,
 } from '@/lib/services';
 import {
   DiagnosticLog,
   StorageService,
   createWxtStorageApi,
+  parseConnectionConfig,
   parseDownloadSettings,
   parseSiteRules,
+  parseUiPrefs,
 } from '@/lib/storage';
 import { buildProtocolUrl, ProtocolAction } from '@/lib/protocol';
 import { decodeThunderLink } from '@/shared/thunder';
@@ -39,6 +42,10 @@ export default defineBackground(() => {
   const diagnosticLog = new DiagnosticLog();
 
   const storageService = new StorageService(createWxtStorageApi(wxtStorage));
+  const permissionService = new PermissionService({
+    contains: (permissions) => browser.permissions.contains(permissions),
+    request: (permissions) => browser.permissions.request(permissions),
+  });
 
   // ─── Logging helpers ──────────────────────────────────
 
@@ -144,6 +151,15 @@ export default defineBackground(() => {
     }
   }
 
+  async function applyDownloadBarPreference(): Promise<void> {
+    if (import.meta.env.FIREFOX) return;
+    if (!settings.hideDownloadBar) {
+      const canRestore = await permissionService.hasDownloadUiAccess().catch(() => false);
+      if (!canRestore) return;
+    }
+    await downloadBarService.apply({ hideDownloadBar: settings.hideDownloadBar });
+  }
+
   // ─── Get tab URL for referer ──────────────────────
   async function getTabUrl(): Promise<string> {
     try {
@@ -165,7 +181,17 @@ export default defineBackground(() => {
       erase: (query) => browser.downloads.erase(query).then(() => {}),
     },
     cookies: {
-      getAll: (details) => browser.cookies.getAll(details),
+      getAll: async (details) => {
+        if (!settings.forwardCookies) return [];
+        const granted = await permissionService.hasCookieForwardingAccess().catch((e) => {
+          logWarn(
+            'permission_revoked',
+            `Cookie permission check failed: ${e instanceof Error ? e.message : String(e)}`,
+          );
+          return false;
+        });
+        return granted ? browser.cookies.getAll(details) : [];
+      },
     },
     diagnosticLog: {
       append: (event: DiagnosticInput) => {
@@ -191,14 +217,8 @@ export default defineBackground(() => {
           };
         },
       }),
-    openProtocolNewTask: async (
-      url: string,
-      referer: string,
-      cookie: string,
-      filename?: string,
-    ) => {
+    openProtocolNewTask: async (url: string, referer: string, filename?: string) => {
       const params: Record<string, string> = { url, referer };
-      if (cookie) params.cookie = cookie;
       if (filename) params.filename = filename;
       const protocolUrl = buildProtocolUrl(ProtocolAction.NewTask, params);
       // Create tab for the protocol URL — active:true so the "Open MotrixNext?"
@@ -270,6 +290,7 @@ export default defineBackground(() => {
             | string
             | undefined,
           state: item.state ?? 'in_progress',
+          referrer: item.referrer ?? '',
         });
       } catch (e) {
         logError(
@@ -364,11 +385,19 @@ export default defineBackground(() => {
   // Magnet link interception from content script
   browser.runtime.onMessage.addListener((msg) => {
     if (msg?.type === 'HANDLE_MAGNET' && typeof msg.url === 'string') {
-      logInfo('magnet_intercepted', `Magnet link intercepted: ${msg.url as string}`, {
-        url: msg.url as string,
-      });
-
       void loadConfig().then(async () => {
+        if (!settings.enabled) {
+          logInfo('download_skipped', `Skipped magnet while interception is paused: ${msg.url}`, {
+            url: msg.url as string,
+            stage: 'enabled',
+          });
+          return;
+        }
+
+        logInfo('magnet_intercepted', `Magnet link intercepted: ${msg.url as string}`, {
+          url: msg.url as string,
+        });
+
         try {
           const url = decodeThunderLink(msg.url as string);
           await orchestrator.sendUrl(url, '');
@@ -392,15 +421,15 @@ export default defineBackground(() => {
     const changedKeys = Object.keys(changes);
 
     if (changes.connection?.newValue) {
-      const conn = changes.connection.newValue as { port?: number; secret?: string };
+      const conn = parseConnectionConfig(changes.connection.newValue);
       desktopClient.updateConfig({
-        port: conn.port ?? 16801,
-        secret: conn.secret ?? '',
+        port: conn.port,
+        secret: conn.secret,
       });
     }
     if (changes.settings?.newValue) {
       settings = parseDownloadSettings(changes.settings.newValue);
-      void downloadBarService.apply({ hideDownloadBar: settings.hideDownloadBar }).catch((e) => {
+      void applyDownloadBarPreference().catch((e) => {
         logWarn(
           'download_bar_error',
           `Download bar update failed: ${e instanceof Error ? e.message : String(e)}`,
@@ -411,13 +440,11 @@ export default defineBackground(() => {
       siteRules = parseSiteRules(changes.siteRules.newValue);
     }
     if (changes.uiPrefs?.newValue) {
-      const prefs = changes.uiPrefs.newValue as { locale?: string };
-      if (prefs.locale) {
-        const effectiveLocale =
-          prefs.locale === 'auto' ? resolveLocaleId(browser.i18n.getUILanguage()) : prefs.locale;
-        bgI18n.setLocale(effectiveLocale);
-        updateContextMenuLocale();
-      }
+      const prefs = parseUiPrefs(changes.uiPrefs.newValue);
+      const effectiveLocale =
+        prefs.locale === 'auto' ? resolveLocaleId(browser.i18n.getUILanguage()) : prefs.locale;
+      bgI18n.setLocale(effectiveLocale);
+      updateContextMenuLocale();
     }
 
     // Log config changes — exclude diagnosticLog writes (too noisy)
@@ -478,7 +505,7 @@ export default defineBackground(() => {
     // Register context menu after locale is loaded — fixes i18n timing
     registerContextMenus();
 
-    downloadBarService.apply({ hideDownloadBar: settings.hideDownloadBar }).catch((e) => {
+    applyDownloadBarPreference().catch((e) => {
       logWarn(
         'download_bar_error',
         `Download bar init failed: ${e instanceof Error ? e.message : String(e)}`,

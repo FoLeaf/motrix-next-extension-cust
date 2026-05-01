@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Времето за връзка изтече",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Скриване на лентата за изтегляния на браузъра",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Иска незадължително разрешение за интерфейса за изтегляния, преди да променя браузъра",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Препращане на бисквитки",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Иска незадължителни разрешения за бисквитки и сайтове за удостоверени изтегляния",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Разрешете интерфейса за изтегляния, за да скриете лентата за изтегляния на браузъра.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Разрешете бисквитки и сайтове, за да препращате бисквитки към Motrix Next.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

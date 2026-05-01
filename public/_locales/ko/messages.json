@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "연결 시간 초과",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "브라우저 다운로드 표시줄 숨기기",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "브라우저 UI를 변경하기 전에 선택적 다운로드 UI 권한을 요청합니다",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "쿠키 전달",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "인증된 다운로드를 위해 선택적 쿠키 및 사이트 권한을 요청합니다",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "브라우저 다운로드 표시줄을 숨기려면 다운로드 UI 권한을 허용하세요.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "쿠키를 Motrix Next로 전달하려면 쿠키 및 사이트 권한을 허용하세요.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

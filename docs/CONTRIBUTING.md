@@ -35,10 +35,13 @@ All checks must pass before PR merge:
 ```bash
 pnpm format:check    # Prettier formatting
 pnpm compile         # TypeScript strict mode (vue-tsc --noEmit)
-pnpm test            # Vitest (288 tests)
+pnpm test            # Vitest unit and integration tests
 pnpm lint            # ESLint (0 errors, 0 warnings)
 pnpm lint:i18n       # i18n key consistency across locales
-pnpm build           # Production build
+pnpm build           # Chromium production build
+pnpm build:firefox   # Firefox production build
+pnpm zip             # Chromium store package
+pnpm zip:firefox     # Firefox store package
 ```
 
 ## 📐 Code Guidelines
@@ -73,19 +76,24 @@ The extension uses Chrome's native i18n system with `messages.json` files under 
 
 ### Adding or Modifying Keys
 
-1. Add the new key to **all 3 locale files** following the Chrome i18n format:
+1. Add or modify keys through `scripts/batch-update-locales.py` so all 26 locale files are updated together:
+   ```bash
+   python3 scripts/batch-update-locales.py
+   ```
+2. Keep English (`en`) as the reference message and provide translations for every supported locale.
+3. Follow the Chrome i18n format:
    ```json
    "key_name": {
      "message": "Your translated text",
      "description": "Context for translators"
    }
    ```
-2. If the message contains dynamic values, use Chrome's `$placeholder$` syntax with a `placeholders` object.
-3. Validate consistency across all locales:
+4. If the message contains dynamic values, use Chrome's `$placeholder$` syntax with a `placeholders` object.
+5. Validate consistency across all locales:
    ```bash
    pnpm lint:i18n
    ```
-4. Every PR that adds or modifies i18n keys **must update all 3 locales**. Partial updates will not be accepted.
+6. Every PR that adds or modifies i18n keys **must update all 26 locales**. Partial updates will not be accepted.
 
 ### Adding a New Language
 

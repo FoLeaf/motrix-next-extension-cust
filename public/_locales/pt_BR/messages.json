@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Tempo limite de conexão",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Ocultar a barra de downloads do navegador",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Solicita a permissão opcional da interface de downloads antes de alterar a interface do navegador",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Encaminhar cookies",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Solicita permissões opcionais de cookies e sites para downloads autenticados",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Conceda a permissão da interface de downloads para ocultar a barra de downloads do navegador.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Conceda permissões de cookies e sites para encaminhar cookies ao Motrix Next.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

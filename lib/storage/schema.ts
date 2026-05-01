@@ -31,21 +31,43 @@ import {
 
 // ─── Leaf Schemas ───────────────────────────────────────
 
-const ConnectionConfigSchema = z
-  .object({
-    port: z.number().int().min(1024).max(65535).default(DEFAULT_CONNECTION_CONFIG.port),
-    secret: z.string().default(DEFAULT_CONNECTION_CONFIG.secret),
-  })
-  .strict();
+const ConnectionConfigSchema = z.object({
+  port: z
+    .number()
+    .int()
+    .min(1024)
+    .max(65535)
+    .catch(DEFAULT_CONNECTION_CONFIG.port)
+    .default(DEFAULT_CONNECTION_CONFIG.port),
+  secret: z
+    .string()
+    .catch(DEFAULT_CONNECTION_CONFIG.secret)
+    .default(DEFAULT_CONNECTION_CONFIG.secret),
+});
 
-const DownloadSettingsSchema = z
-  .object({
-    enabled: z.boolean().default(DEFAULT_DOWNLOAD_SETTINGS.enabled),
-    minFileSize: z.number().min(0).default(DEFAULT_DOWNLOAD_SETTINGS.minFileSize),
-    hideDownloadBar: z.boolean().default(DEFAULT_DOWNLOAD_SETTINGS.hideDownloadBar),
-    autoLaunchApp: z.boolean().default(DEFAULT_DOWNLOAD_SETTINGS.autoLaunchApp),
-  })
-  .strict();
+const DownloadSettingsSchema = z.object({
+  enabled: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.enabled)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.enabled),
+  minFileSize: z
+    .number()
+    .min(0)
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.minFileSize)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.minFileSize),
+  hideDownloadBar: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.hideDownloadBar)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.hideDownloadBar),
+  autoLaunchApp: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.autoLaunchApp)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.autoLaunchApp),
+  forwardCookies: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.forwardCookies)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.forwardCookies),
+});
 
 const SiteRuleActionSchema = z.enum(['always-intercept', 'always-skip', 'use-global']);
 
@@ -55,13 +77,14 @@ const SiteRuleSchema = z.object({
   action: SiteRuleActionSchema,
 });
 
-const UiPrefsSchema = z
-  .object({
-    theme: z.enum(['system', 'light', 'dark']).default(DEFAULT_UI_PREFS.theme),
-    colorScheme: z.string().default(DEFAULT_UI_PREFS.colorScheme),
-    locale: z.string().default(DEFAULT_UI_PREFS.locale),
-  })
-  .strict();
+const UiPrefsSchema = z.object({
+  theme: z
+    .enum(['system', 'light', 'dark'])
+    .catch(DEFAULT_UI_PREFS.theme)
+    .default(DEFAULT_UI_PREFS.theme),
+  colorScheme: z.string().catch(DEFAULT_UI_PREFS.colorScheme).default(DEFAULT_UI_PREFS.colorScheme),
+  locale: z.string().catch(DEFAULT_UI_PREFS.locale).default(DEFAULT_UI_PREFS.locale),
+});
 
 const DiagnosticLevelSchema = z.enum(['info', 'warn', 'error']);
 
@@ -142,7 +165,6 @@ export function parseConnectionConfig(input: unknown): ParsedStorage['connection
   }
   const result = ConnectionConfigSchema.safeParse(input);
   if (result.success) return result.data;
-  // Field-level fallback: parse with all defaults, then overlay valid fields
   return ConnectionConfigSchema.parse({});
 }
 

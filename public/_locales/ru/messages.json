@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Время подключения истекло",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Скрыть панель загрузок браузера",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Запрашивает необязательное разрешение интерфейса загрузок перед изменением интерфейса браузера",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Передавать cookie",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Запрашивает необязательные разрешения cookie и сайтов для загрузок с авторизацией",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Разрешите интерфейс загрузок, чтобы скрыть панель загрузок браузера.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Разрешите cookie и сайты, чтобы передавать cookie в Motrix Next.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

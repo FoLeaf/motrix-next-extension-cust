@@ -76,6 +76,7 @@ export interface DownloadSettings {
   minFileSize: number; // MB, 0 = no limit
   hideDownloadBar: boolean;
   autoLaunchApp: boolean;
+  forwardCookies: boolean;
 }
 
 export interface SiteRule {

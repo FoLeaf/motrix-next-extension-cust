@@ -1,6 +1,6 @@
 # Privacy Policy — Motrix Next Extension
 
-**Last updated:** April 4, 2026
+**Last updated:** May 1, 2026
 
 ## Overview
 
@@ -22,21 +22,22 @@ The Extension accesses the following data solely to perform its core functionali
 
 When a browser download is initiated and intercepted by the Extension, it reads:
 
-- **Download URL** — to forward to the local aria2 service
-- **Filename** — to display in notifications and pass to aria2
-- **HTTP Referer** — to include as a request header for aria2 (required by some servers)
+- **Download URL** — to forward to the local Motrix Next HTTP API
+- **Filename** — to display in diagnostics and pass to Motrix Next
+- **HTTP Referer** — to include with the task submission when available
 - **File size** — to apply the minimum file size filter
 
-This data is sent only to the aria2 JSON-RPC service running on `127.0.0.1` (localhost) — **never to any external server**.
+This data is sent only to the Motrix Next HTTP API running on `127.0.0.1` (localhost) — **never to any external server**.
 
 ### Cookies (Optional — User-Initiated Only)
 
-If the user explicitly grants the optional "cookies" permission via Settings → Enhanced Mode:
+If the user explicitly enables "Forward Cookies" and grants the optional cookie and site permissions in Settings:
 
 - The Extension reads cookies for the download URL's domain
-- These cookies are forwarded to the local aria2 service as HTTP headers
+- These cookies are forwarded to the local Motrix Next HTTP API
 - This enables authenticated downloads (e.g., from file hosting services that require login)
-- **Cookies are never sent to any external server** — only to the locally running aria2 instance
+- **Cookies are never sent to any external server** — only to the locally running Motrix Next instance
+- Cookies are not included in `motrixnext://` protocol fallback URLs
 
 If the user does not grant this permission, no cookies are accessed.
 
@@ -45,7 +46,7 @@ If the user does not grant this permission, no cookies are accessed.
 The Extension stores the following user-configured preferences in `chrome.storage.local`:
 
 - RPC connection settings (port number, secret token)
-- Download behavior preferences (enabled/disabled, minimum file size, fallback mode)
+- Download behavior preferences (enabled/disabled, minimum file size, auto-launch, cookie forwarding, download bar visibility)
 - Site rules (per-domain interception settings)
 - Appearance settings (theme, color scheme, language)
 - Diagnostic event log (a local ring buffer of recent extension events for troubleshooting)
@@ -56,25 +57,25 @@ This data never leaves your browser and is not accessible to any external servic
 
 The Extension makes network requests **only** to the following local addresses:
 
-- `http://127.0.0.1:{port}` — aria2 JSON-RPC endpoint
-- `http://localhost:{port}` — aria2 JSON-RPC endpoint (alternative)
+- `http://127.0.0.1:{port}` — Motrix Next HTTP API
+- `http://localhost:{port}` — Motrix Next HTTP API (alternative)
 
-Where `{port}` is the user-configured RPC port (default: 16800).
+Where `{port}` is the user-configured API port (default: 16801).
 
 **The Extension does not communicate with any remote servers, cloud services, analytics platforms, or third-party APIs.**
 
 ## Permissions Explained
 
-| Permission                                 | Why It's Needed                                                                   |
-| ------------------------------------------ | --------------------------------------------------------------------------------- |
-| `downloads`                                | Intercept, pause, cancel, and erase browser downloads that are delegated to aria2 |
-| `storage`                                  | Save user settings, site rules, and diagnostic logs locally                       |
-| `contextMenus`                             | Add "Download with Motrix Next" to the right-click menu                           |
-| `notifications`                            | Show desktop notifications for download events                                    |
-| `cookies` _(optional)_                     | Forward cookies to local aria2 for authenticated downloads                        |
-| `downloads.ui` _(optional)_                | Hide the browser download bar after interception                                  |
-| `http://127.0.0.1/*`, `http://localhost/*` | Communicate with the local aria2 RPC service                                      |
-| `https://*/*`, `http://*/*` _(optional)_   | Read cookies from any origin (required for cookie forwarding)                     |
+| Permission                                 | Why It's Needed                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `downloads`                                | Intercept, cancel, and erase browser downloads that are delegated to Motrix Next |
+| `storage`                                  | Save user settings, site rules, and diagnostic logs locally                      |
+| `contextMenus`                             | Add "Download with Motrix Next" to the right-click menu                          |
+| `notifications`                            | Show desktop notifications for download events                                   |
+| `cookies` _(optional)_                     | Forward cookies to local Motrix Next for authenticated downloads                 |
+| `downloads.ui` _(optional)_                | Hide the browser download bar after interception                                 |
+| `http://127.0.0.1/*`, `http://localhost/*` | Communicate with the local Motrix Next HTTP API                                  |
+| `https://*/*`, `http://*/*` _(optional)_   | Read cookies from any origin (required for cookie forwarding)                    |
 
 ## Third-Party Services
 
@@ -84,7 +85,7 @@ The Extension does not integrate with, send data to, or receive data from any th
 
 - **Download metadata** is used transiently during interception and is not persisted
 - **User settings** remain in local storage until the user clears them or uninstalls the Extension
-- **Diagnostic logs** use a fixed-size ring buffer (default 30 entries) and are automatically overwritten
+- **Diagnostic logs** use a fixed-size ring buffer (default 100 entries) and are automatically overwritten
 
 ## Children's Privacy
 

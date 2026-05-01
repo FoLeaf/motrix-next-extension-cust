@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Koneksi habis waktu",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Sembunyikan Bilah Unduhan Browser",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Meminta izin UI unduhan opsional sebelum mengubah UI browser",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Teruskan Cookie",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Meminta izin cookie dan situs opsional untuk unduhan terautentikasi",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Berikan izin UI unduhan untuk menyembunyikan bilah unduhan browser.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Berikan izin cookie dan situs untuk meneruskan cookie ke Motrix Next.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

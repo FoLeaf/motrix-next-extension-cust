@@ -36,10 +36,10 @@
 - **Per-site rules** — Glob-pattern rules (e.g. `*.github.com`) to always intercept, always skip, or defer to global settings
 - **Context menu** — Right-click any link, image, audio, or video → "Download with Motrix Next"
 - **Magnet & torrent** — `magnet:` URIs and `.torrent` files are automatically captured and routed to aria2
-- **Cookie forwarding** — Best-effort cookie forwarding via optional enhanced permissions for authenticated downloads
+- **Cookie forwarding** — Optional cookie forwarding for authenticated downloads, enabled only after an explicit runtime permission grant
 - **Real-time dashboard** — Popup shows live download/upload speeds, active/waiting/completed task counts
 - **Auto-launch** — Launches Motrix Next via `motrixnext://` protocol when not running, waits for API, then retries
-- **Completion notifications** — Desktop notifications when downloads are sent and when they finish
+- **Failure notifications** — Alerts when an intercepted download cannot be delivered to Motrix Next
 - **Download bar control** — Optionally hides Chrome's native download shelf (Chromium 115+, not available on Firefox)
 - **Dark mode** — System / Light / Dark with 10 Material You color schemes
 - **i18n** — 26 languages including English, Chinese, Japanese, Korean, French, German, Spanish, and more
@@ -109,7 +109,7 @@ Yes. This extension sends downloads to the Motrix Next desktop app via its HTTP 
 
 <br>
 
-The broad host permissions (`*://*/*`) are **optional** — only requested when you explicitly enable "Cookie Forwarding" in Settings. The `chrome.cookies.getAll()` API requires matching host permissions for the target domain, and since downloads can come from any site, the extension needs wildcard access to read cookies. These permissions are never used for any other purpose, and all data is sent only to `127.0.0.1`.
+The broad host permissions (`*://*/*`) are **optional** — only requested when you explicitly enable "Forward Cookies" in Settings. The `chrome.cookies.getAll()` API requires matching host permissions for the target domain, and since downloads can come from any site, the extension needs wildcard access to read cookies. These permissions are never used for any other purpose, and cookies are sent only to the Motrix Next API on `127.0.0.1`.
 
 </details>
 

@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "หมดเวลาการเชื่อมต่อ",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "ซ่อนแถบดาวน์โหลดของเบราว์เซอร์",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "ขอสิทธิ์ UI ดาวน์โหลดแบบเลือกได้ก่อนเปลี่ยน UI ของเบราว์เซอร์",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "ส่งต่อคุกกี้",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "ขอสิทธิ์คุกกี้และไซต์แบบเลือกได้สำหรับการดาวน์โหลดที่ต้องยืนยันตัวตน",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "อนุญาตสิทธิ์ UI ดาวน์โหลดเพื่อซ่อนแถบดาวน์โหลดของเบราว์เซอร์",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "อนุญาตสิทธิ์คุกกี้และไซต์เพื่อส่งต่อคุกกี้ไปยัง Motrix Next",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

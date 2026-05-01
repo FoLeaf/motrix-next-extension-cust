@@ -4,6 +4,7 @@ import type { OrchestratorDeps } from '@/lib/download/orchestrator';
 import type { DownloadSettings, SiteRule } from '@/shared/types';
 import { DEFAULT_DOWNLOAD_SETTINGS } from '@/shared/constants';
 import { DesktopApiClient } from '@/lib/api/desktop-client';
+import { ApiAuthError } from '@/shared/errors';
 
 // ─── Mock Types ─────────────────────────────────────────
 
@@ -48,7 +49,7 @@ function createMockDeps(overrides: Partial<OrchestratorDeps> = {}): Orchestrator
     getSiteRules: vi.fn().mockReturnValue([] as SiteRule[]),
     getTabUrl: vi.fn<() => Promise<string>>().mockResolvedValue('https://example.com/page'),
     openProtocolNewTask: vi
-      .fn<(url: string, referer: string, cookie: string, filename?: string) => Promise<void>>()
+      .fn<(url: string, referer: string, filename?: string) => Promise<void>>()
       .mockResolvedValue(undefined),
     ...overrides,
   };
@@ -81,7 +82,6 @@ describe('DownloadOrchestrator', () => {
       expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/file.zip',
         'https://example.com/page',
-        '', // no cookies API injected in default mock deps
       );
     });
 
@@ -96,7 +96,6 @@ describe('DownloadOrchestrator', () => {
       expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://cdn.example.com/913b9d40.zip',
         'https://example.com/page',
-        '',
         'file.zip',
       );
     });
@@ -112,7 +111,6 @@ describe('DownloadOrchestrator', () => {
       expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/file.zip',
         'https://example.com/page',
-        '',
       );
     });
 
@@ -129,7 +127,6 @@ describe('DownloadOrchestrator', () => {
       expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/linux.torrent',
         'https://example.com/page',
-        '',
       );
     });
 
@@ -320,8 +317,18 @@ describe('DownloadOrchestrator', () => {
   // ─── handleCreated — cookie collection ─────────────────
 
   describe('handleCreated — cookie forwarding', () => {
-    it('collects and forwards cookies when cookies API is available', async () => {
+    it('forwards cookies only to the HTTP API path', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockResolvedValue({ action: 'queued' });
       const cookieDeps = createMockDeps({
+        desktopClient,
+        openProtocolNewTask: undefined,
+        getSettings: vi.fn().mockReturnValue({
+          ...DEFAULT_DOWNLOAD_SETTINGS,
+          forwardCookies: true,
+        } satisfies DownloadSettings),
         cookies: {
           getAll: vi.fn().mockResolvedValue([
             { name: 'token', value: 'abc123' },
@@ -333,10 +340,53 @@ describe('DownloadOrchestrator', () => {
 
       await orch.handleCreated(createMockDownloadItem());
 
+      expect(addDownload).toHaveBeenCalledWith({
+        url: 'https://example.com/file.zip',
+        referer: 'https://example.com/page',
+        cookie: 'token=abc123; session=xyz789',
+        filename: 'file.zip',
+      });
+    });
+
+    it('does not collect cookies when cookie forwarding is disabled', async () => {
+      const cookies = {
+        getAll: vi.fn().mockResolvedValue([{ name: 'token', value: 'abc123' }]),
+      };
+      const cookieDeps = createMockDeps({
+        cookies,
+        getSettings: vi.fn().mockReturnValue({
+          ...DEFAULT_DOWNLOAD_SETTINGS,
+          forwardCookies: false,
+        } satisfies DownloadSettings),
+      });
+      const orch = new DownloadOrchestrator(cookieDeps);
+
+      await orch.handleCreated(createMockDownloadItem());
+
+      expect(cookies.getAll).not.toHaveBeenCalled();
       expect(cookieDeps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/file.zip',
         'https://example.com/page',
-        'token=abc123; session=xyz789',
+      );
+    });
+
+    it('drops cookies when falling back to the protocol handler', async () => {
+      const cookieDeps = createMockDeps({
+        getSettings: vi.fn().mockReturnValue({
+          ...DEFAULT_DOWNLOAD_SETTINGS,
+          forwardCookies: true,
+        } satisfies DownloadSettings),
+        cookies: {
+          getAll: vi.fn().mockResolvedValue([{ name: 'token', value: 'abc123' }]),
+        },
+      });
+      const orch = new DownloadOrchestrator(cookieDeps);
+
+      await orch.handleCreated(createMockDownloadItem());
+
+      expect(cookieDeps.openProtocolNewTask).toHaveBeenCalledWith(
+        'https://example.com/file.zip',
+        'https://example.com/page',
       );
     });
 
@@ -349,7 +399,6 @@ describe('DownloadOrchestrator', () => {
       expect(noCookieApiDeps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/file.zip',
         'https://example.com/page',
-        '',
       );
     });
 
@@ -367,7 +416,6 @@ describe('DownloadOrchestrator', () => {
       expect(errorDeps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/file.zip',
         'https://example.com/page',
-        '', // graceful degradation — empty cookie
       );
     });
 
@@ -384,7 +432,6 @@ describe('DownloadOrchestrator', () => {
       expect(emptyCookieDeps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/file.zip',
         'https://example.com/page',
-        '',
       );
     });
 
@@ -463,7 +510,15 @@ describe('DownloadOrchestrator', () => {
     });
 
     it('includes hasCookie: true in diagnostic context when cookies are collected', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      vi.spyOn(desktopClient, 'addDownload').mockResolvedValue({ action: 'queued' });
       const cookieDeps = createMockDeps({
+        desktopClient,
+        openProtocolNewTask: undefined,
+        getSettings: vi.fn().mockReturnValue({
+          ...DEFAULT_DOWNLOAD_SETTINGS,
+          forwardCookies: true,
+        } satisfies DownloadSettings),
         cookies: {
           getAll: vi.fn().mockResolvedValue([{ name: 'auth', value: 'secret' }]),
         },
@@ -492,7 +547,6 @@ describe('DownloadOrchestrator', () => {
       expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/file.zip',
         'https://example.com',
-        '', // no cookies API in default mock
       );
       expect(result).toBe('routed-to-desktop');
     });
@@ -500,7 +554,7 @@ describe('DownloadOrchestrator', () => {
     it('routes magnet URI to desktop', async () => {
       const result = await orchestrator.sendUrl('magnet:?xt=urn:btih:abc123', '');
 
-      expect(deps.openProtocolNewTask).toHaveBeenCalledWith('magnet:?xt=urn:btih:abc123', '', '');
+      expect(deps.openProtocolNewTask).toHaveBeenCalledWith('magnet:?xt=urn:btih:abc123', '');
       expect(result).toBe('routed-to-desktop');
     });
 
@@ -513,7 +567,6 @@ describe('DownloadOrchestrator', () => {
       expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
         'https://example.com/linux.torrent',
         'https://example.com',
-        '',
       );
       expect(result).toBe('routed-to-desktop');
     });
@@ -535,6 +588,29 @@ describe('DownloadOrchestrator', () => {
 
       await expect(orch.sendUrl('https://example.com/file.zip', '')).rejects.toThrow();
     });
+
+    it('does not fall back to deep-link when HTTP API authentication fails', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'wrong-secret' });
+      vi.spyOn(desktopClient, 'addDownload').mockRejectedValue(new ApiAuthError());
+      const authDeps = createMockDeps({
+        desktopClient,
+        wakeDesktop: vi.fn().mockResolvedValue(true),
+      });
+      const orch = new DownloadOrchestrator(authDeps);
+
+      await expect(orch.sendUrl('https://example.com/file.zip', '')).rejects.toThrow(
+        'Desktop app routing unavailable',
+      );
+
+      expect(authDeps.wakeDesktop).not.toHaveBeenCalled();
+      expect(authDeps.openProtocolNewTask).not.toHaveBeenCalled();
+      expect(authDeps.diagnosticLog.append).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'api_auth_failed',
+          level: 'error',
+        }),
+      );
+    });
   });
 
   // ─── Verify removed behaviors ─────────────────────────
@@ -552,6 +628,10 @@ describe('DownloadOrchestrator', () => {
   describe('diagnostic log — cookie_collect_failed', () => {
     it('logs cookie_collect_failed when cookies.getAll throws', async () => {
       const errorDeps = createMockDeps({
+        getSettings: vi.fn().mockReturnValue({
+          ...DEFAULT_DOWNLOAD_SETTINGS,
+          forwardCookies: true,
+        } satisfies DownloadSettings),
         cookies: {
           getAll: vi.fn().mockRejectedValue(new Error('Permission denied')),
         },

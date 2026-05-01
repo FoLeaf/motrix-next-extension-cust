@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: DownloadSettings = {
   minFileSize: 0,
   hideDownloadBar: false,
   autoLaunchApp: true,
+  forwardCookies: false,
 };
 
 function createContext(overrides?: Partial<FilterContext>): FilterContext {

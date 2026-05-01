@@ -11,13 +11,17 @@ import { NFormItem, NSwitch, NInputNumber, NDivider } from 'naive-ui';
 defineProps<{
   enabled: boolean;
   minFileSize: number;
+  hideDownloadBar: boolean;
   autoLaunchApp: boolean;
+  forwardCookies: boolean;
 }>();
 
 const emit = defineEmits<{
   'update:enabled': [value: boolean];
   'update:minFileSize': [value: number];
+  'update:hideDownloadBar': [value: boolean];
   'update:autoLaunchApp': [value: boolean];
+  'update:forwardCookies': [value: boolean];
 }>();
 
 import { useI18n } from '@/shared/i18n/engine';
@@ -59,6 +63,21 @@ const { t: i18n } = useI18n();
 
     <NDivider />
 
+    <NFormItem :label="i18n('options_hide_download_bar_label', 'Hide Browser Download Bar')">
+      <template #label>
+        <div class="label-group">
+          <span>{{ i18n('options_hide_download_bar_label', 'Hide Browser Download Bar') }}</span>
+          <span class="label-hint">{{
+            i18n(
+              'options_hide_download_bar_desc',
+              'Requests optional download UI permission before changing browser UI',
+            )
+          }}</span>
+        </div>
+      </template>
+      <NSwitch :value="hideDownloadBar" @update:value="emit('update:hideDownloadBar', $event)" />
+    </NFormItem>
+
     <NFormItem :label="i18n('options_auto_launch_label', 'Auto-launch Motrix Next')">
       <template #label>
         <div class="label-group">
@@ -69,6 +88,21 @@ const { t: i18n } = useI18n();
         </div>
       </template>
       <NSwitch :value="autoLaunchApp" @update:value="emit('update:autoLaunchApp', $event)" />
+    </NFormItem>
+
+    <NFormItem :label="i18n('options_forward_cookies_label', 'Forward Cookies')">
+      <template #label>
+        <div class="label-group">
+          <span>{{ i18n('options_forward_cookies_label', 'Forward Cookies') }}</span>
+          <span class="label-hint">{{
+            i18n(
+              'options_forward_cookies_desc',
+              'Requests optional cookie and site permissions for authenticated downloads',
+            )
+          }}</span>
+        </div>
+      </template>
+      <NSwitch :value="forwardCookies" @update:value="emit('update:forwardCookies', $event)" />
     </NFormItem>
   </div>
 </template>

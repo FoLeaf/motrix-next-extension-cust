@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "接続がタイムアウトしました",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "ブラウザーのダウンロードバーを非表示",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "ブラウザー UI を変更する前に任意のダウンロード UI 権限を要求します",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Cookie を転送",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "認証が必要なダウンロードのために任意の Cookie とサイト権限を要求します",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "ブラウザーのダウンロードバーを非表示にするには、ダウンロード UI 権限を許可してください。",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Cookie を Motrix Next に転送するには、Cookie とサイトの権限を許可してください。",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

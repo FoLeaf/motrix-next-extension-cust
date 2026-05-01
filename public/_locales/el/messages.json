@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Λήξη χρονικού ορίου σύνδεσης",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Απόκρυψη της γραμμής λήψεων του προγράμματος περιήγησης",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Ζητά την προαιρετική άδεια διεπαφής λήψεων πριν αλλάξει τη διεπαφή του προγράμματος περιήγησης",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Προώθηση cookies",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Ζητά προαιρετικές άδειες cookies και ιστότοπων για λήψεις με έλεγχο ταυτότητας",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Παραχωρήστε την άδεια διεπαφής λήψεων για απόκρυψη της γραμμής λήψεων του προγράμματος περιήγησης.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Παραχωρήστε άδειες cookies και ιστότοπων για προώθηση cookies στο Motrix Next.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

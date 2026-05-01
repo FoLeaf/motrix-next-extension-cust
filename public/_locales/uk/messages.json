@@ -407,5 +407,29 @@
   "error_api_timeout": {
     "message": "Час підключення вичерпано",
     "description": "Error when the API connection times out"
+  },
+  "options_hide_download_bar_label": {
+    "message": "Приховати панель завантажень браузера",
+    "description": "Label for the optional browser download bar hiding setting."
+  },
+  "options_hide_download_bar_desc": {
+    "message": "Запитує необов’язковий дозвіл інтерфейсу завантажень перед зміною інтерфейсу браузера",
+    "description": "Description for the optional browser download bar hiding setting."
+  },
+  "options_forward_cookies_label": {
+    "message": "Передавати cookie",
+    "description": "Label for the optional cookie forwarding setting."
+  },
+  "options_forward_cookies_desc": {
+    "message": "Запитує необов’язкові дозволи cookie та сайтів для автентифікованих завантажень",
+    "description": "Description for the optional cookie forwarding setting."
+  },
+  "options_permission_download_ui_denied": {
+    "message": "Надайте дозвіл інтерфейсу завантажень, щоб приховати панель завантажень браузера.",
+    "description": "Toast shown when the optional downloads.ui permission is denied."
+  },
+  "options_permission_cookies_denied": {
+    "message": "Надайте дозволи cookie та сайтів, щоб передавати cookie до Motrix Next.",
+    "description": "Toast shown when optional cookie forwarding permissions are denied."
   }
 }

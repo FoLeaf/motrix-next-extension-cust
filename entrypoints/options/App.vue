@@ -18,6 +18,7 @@ import { browser } from 'wxt/browser';
 import { storage as wxtStorage } from '#imports';
 import { NConfigProvider, createDiscreteApi } from 'naive-ui';
 import { StorageService, createWxtStorageApi } from '@/lib/storage';
+import { PermissionService } from '@/lib/services';
 import type { ConnectionConfig, DiagnosticEvent } from '@/shared/types';
 import {
   DEFAULT_CONNECTION_CONFIG,
@@ -68,6 +69,10 @@ const activeSection = ref('connection');
 // ─── StorageService ──────────────────────────────────────────────────
 
 const storageService = new StorageService(createWxtStorageApi(wxtStorage));
+const permissionService = new PermissionService({
+  contains: (permissions) => browser.permissions.contains(permissions),
+  request: (permissions) => browser.permissions.request(permissions),
+});
 
 // ─── Composables ────────────────────────────────────────────────────
 
@@ -93,6 +98,7 @@ interface SettingsForm {
   minFileSize: number;
   hideDownloadBar: boolean;
   autoLaunchApp: boolean;
+  forwardCookies: boolean;
 }
 
 function buildForm(): SettingsForm {
@@ -103,6 +109,7 @@ function buildForm(): SettingsForm {
     minFileSize: DEFAULT_DOWNLOAD_SETTINGS.minFileSize,
     hideDownloadBar: DEFAULT_DOWNLOAD_SETTINGS.hideDownloadBar,
     autoLaunchApp: DEFAULT_DOWNLOAD_SETTINGS.autoLaunchApp,
+    forwardCookies: DEFAULT_DOWNLOAD_SETTINGS.forwardCookies,
   };
 }
 
@@ -126,6 +133,7 @@ const {
       minFileSize: f.minFileSize,
       hideDownloadBar: f.hideDownloadBar,
       autoLaunchApp: f.autoLaunchApp,
+      forwardCookies: f.forwardCookies,
     });
   },
   afterSave: () => {
@@ -144,6 +152,48 @@ async function handleSave(): Promise<void> {
 function handleReset(): void {
   rawReset();
   toast.info(i18n('options_discard', 'Discard'));
+}
+
+async function handleHideDownloadBarChange(value: boolean): Promise<void> {
+  if (!value) {
+    form.value.hideDownloadBar = false;
+    return;
+  }
+
+  const granted = await permissionService.requestDownloadUiAccess().catch(() => false);
+  if (granted) {
+    form.value.hideDownloadBar = true;
+    return;
+  }
+
+  form.value.hideDownloadBar = false;
+  toast.warning(
+    i18n(
+      'options_permission_download_ui_denied',
+      'Grant download UI permission to hide the browser download bar.',
+    ),
+  );
+}
+
+async function handleForwardCookiesChange(value: boolean): Promise<void> {
+  if (!value) {
+    form.value.forwardCookies = false;
+    return;
+  }
+
+  const granted = await permissionService.requestCookieForwardingAccess().catch(() => false);
+  if (granted) {
+    form.value.forwardCookies = true;
+    return;
+  }
+
+  form.value.forwardCookies = false;
+  toast.warning(
+    i18n(
+      'options_permission_cookies_denied',
+      'Grant cookie and site permissions to forward cookies to Motrix Next.',
+    ),
+  );
 }
 
 // ─── Connection Test ────────────────────────────────────────────────
@@ -170,8 +220,13 @@ async function loadFromStorage(): Promise<void> {
   form.value.secret = data.connection.secret;
   form.value.enabled = data.settings.enabled;
   form.value.minFileSize = data.settings.minFileSize;
-  form.value.hideDownloadBar = data.settings.hideDownloadBar;
+  form.value.hideDownloadBar =
+    data.settings.hideDownloadBar &&
+    (await permissionService.hasDownloadUiAccess().catch(() => false));
   form.value.autoLaunchApp = data.settings.autoLaunchApp;
+  form.value.forwardCookies =
+    data.settings.forwardCookies &&
+    (await permissionService.hasCookieForwardingAccess().catch(() => false));
   resetSnapshot();
 
   // Hydrate composables (already type-safe from Zod)
@@ -301,10 +356,14 @@ onUnmounted(() => {
                 <BehaviorSection
                   :enabled="form.enabled"
                   :min-file-size="form.minFileSize"
+                  :hide-download-bar="form.hideDownloadBar"
                   :auto-launch-app="form.autoLaunchApp"
+                  :forward-cookies="form.forwardCookies"
                   @update:enabled="form.enabled = $event"
                   @update:min-file-size="form.minFileSize = $event"
+                  @update:hide-download-bar="handleHideDownloadBarChange"
                   @update:auto-launch-app="form.autoLaunchApp = $event"
+                  @update:forward-cookies="handleForwardCookiesChange"
                 />
                 <SettingsActionBar :is-dirty="isDirty" @save="handleSave" @discard="handleReset" />
               </div>

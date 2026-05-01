@@ -66,6 +66,7 @@ describe('parseDownloadSettings', () => {
       minFileSize: 10,
       hideDownloadBar: true,
       autoLaunchApp: false,
+      forwardCookies: true,
     };
     const result = parseDownloadSettings(input);
     expect(result).toEqual(input);
@@ -78,6 +79,7 @@ describe('parseDownloadSettings', () => {
       minFileSize: 0,
       hideDownloadBar: false,
       autoLaunchApp: true,
+      forwardCookies: false,
     });
   });
 
@@ -88,6 +90,7 @@ describe('parseDownloadSettings', () => {
       minFileSize: 0,
       hideDownloadBar: false,
       autoLaunchApp: true,
+      forwardCookies: false,
     });
   });
 
@@ -103,6 +106,26 @@ describe('parseDownloadSettings', () => {
 
   it('strips extra fields', () => {
     const result = parseDownloadSettings({ enabled: true, unknown: 42 });
+    expect(result).not.toHaveProperty('unknown');
+  });
+
+  it('preserves valid sibling fields when one setting is corrupt', () => {
+    const result = parseDownloadSettings({
+      enabled: false,
+      minFileSize: -5,
+      hideDownloadBar: true,
+      autoLaunchApp: false,
+      forwardCookies: true,
+      unknown: 42,
+    });
+
+    expect(result).toEqual({
+      enabled: false,
+      minFileSize: 0,
+      hideDownloadBar: true,
+      autoLaunchApp: false,
+      forwardCookies: true,
+    });
     expect(result).not.toHaveProperty('unknown');
   });
 });
@@ -195,6 +218,18 @@ describe('parseUiPrefs', () => {
     expect(parseUiPrefs({ theme: 'system' }).theme).toBe('system');
     expect(parseUiPrefs({ theme: 'light' }).theme).toBe('light');
     expect(parseUiPrefs({ theme: 'dark' }).theme).toBe('dark');
+  });
+
+  it('preserves valid sibling fields when one preference is corrupt', () => {
+    const result = parseUiPrefs({
+      theme: 'invalid-theme',
+      colorScheme: 'space',
+      locale: 'zh_CN',
+      unknown: true,
+    });
+
+    expect(result).toEqual({ theme: 'system', colorScheme: 'space', locale: 'zh_CN' });
+    expect(result).not.toHaveProperty('unknown');
   });
 });
 
@@ -318,6 +353,7 @@ describe('parseStorage', () => {
       minFileSize: 0,
       hideDownloadBar: false,
       autoLaunchApp: true,
+      forwardCookies: false,
     });
     expect(result.siteRules).toEqual([]);
     expect(result.uiPrefs).toEqual({ theme: 'system', colorScheme: 'amber', locale: 'auto' });
@@ -339,6 +375,31 @@ describe('parseStorage', () => {
     expect(result.connection.secret).toBe(''); // defaulted
     expect(result.settings.enabled).toBe(false);
     expect(result.settings.minFileSize).toBe(0); // defaulted
+  });
+
+  it('strips unknown fields without discarding valid stored values', () => {
+    const result = parseStorage({
+      connection: { port: 16802, secret: 'token', extra: true },
+      settings: {
+        enabled: false,
+        minFileSize: 25,
+        hideDownloadBar: true,
+        autoLaunchApp: false,
+        forwardCookies: true,
+        extra: 'ignored',
+      },
+      uiPrefs: { theme: 'dark', colorScheme: 'mint', locale: 'en', extra: true },
+    });
+
+    expect(result.connection).toEqual({ port: 16802, secret: 'token' });
+    expect(result.settings).toEqual({
+      enabled: false,
+      minFileSize: 25,
+      hideDownloadBar: true,
+      autoLaunchApp: false,
+      forwardCookies: true,
+    });
+    expect(result.uiPrefs).toEqual({ theme: 'dark', colorScheme: 'mint', locale: 'en' });
   });
 
   it('survives completely corrupt data gracefully', () => {

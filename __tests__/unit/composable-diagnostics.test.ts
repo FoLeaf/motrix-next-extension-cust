@@ -68,6 +68,7 @@ describe('useDiagnostics', () => {
           minFileSize: 0,
           hideDownloadBar: false,
           autoLaunchApp: true,
+          forwardCookies: false,
         },
         siteRules: [{ id: 'r1', pattern: '*.github.com', action: 'always-intercept' }],
         uiPrefs: { theme: 'system', colorScheme: 'amber', locale: 'auto' },

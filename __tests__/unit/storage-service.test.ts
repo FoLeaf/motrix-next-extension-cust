@@ -46,6 +46,7 @@ describe('StorageService.load', () => {
         enabled: false,
         minFileSize: 5,
         hideDownloadBar: true,
+        forwardCookies: true,
       },
     });
     const service = new StorageService(api);
@@ -103,6 +104,7 @@ describe('StorageService.saveSettings', () => {
       minFileSize: 10,
       hideDownloadBar: true,
       autoLaunchApp: false,
+      forwardCookies: true,
     };
 
     await service.saveSettings(settings);

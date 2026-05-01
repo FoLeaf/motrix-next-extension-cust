@@ -4,6 +4,7 @@ import Components from 'unplugin-vue-components/vite';
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers';
 import { resolve } from 'node:path';
 import { mkdirSync, readFileSync } from 'node:fs';
+import { buildExtensionManifest } from './shared/manifest';
 
 // Ensure persistent browser profile directories exist before chrome-launcher
 // attempts to write chrome-out.log. mkdirSync is idempotent with recursive.
@@ -28,29 +29,7 @@ export default defineConfig({
     firefoxProfile: FIREFOX_PROFILE,
     keepProfileChanges: true,
   },
-  manifest: ({ browser }) => ({
-    name: '__MSG_ext_name__',
-    description: '__MSG_ext_description__',
-    default_locale: 'en',
-    permissions:
-      browser === 'firefox'
-        ? ['downloads', 'storage', 'contextMenus', 'notifications', 'cookies']
-        : ['downloads', 'storage', 'contextMenus', 'notifications', 'cookies', 'downloads.ui'],
-    host_permissions: ['http://127.0.0.1/*', 'http://localhost/*', 'https://*/*', 'http://*/*'],
-    // Firefox AMO requires gecko.id for signing and data_collection_permissions
-    // for privacy disclosure. Chrome ignores this key entirely.
-    ...(browser === 'firefox' && {
-      browser_specific_settings: {
-        gecko: {
-          id: 'motrix-next-extension@aninsomniacy.dev',
-          strict_min_version: '128.0',
-          data_collection_permissions: {
-            required: ['none'],
-          },
-        },
-      },
-    }),
-  }),
+  manifest: ({ browser }) => buildExtensionManifest(browser),
   vite: () => ({
     build: {
       // WXT builds the service worker as an IIFE, so manual code-splitting is
