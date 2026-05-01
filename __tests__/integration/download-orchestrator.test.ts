@@ -459,6 +459,64 @@ describe('DownloadOrchestrator', () => {
       });
     });
 
+    it('does not forward numeric download-item placeholder as HTTP API filename', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockResolvedValue({ action: 'queued' });
+      const apiDeps = createMockDeps({ desktopClient, openProtocolNewTask: undefined });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+          finalUrl: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+          filename: '0.xlsx',
+          mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }),
+      );
+
+      expect(addDownload).toHaveBeenCalledWith({
+        url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+        referer: 'https://example.com/page',
+        cookie: undefined,
+      });
+    });
+
+    it('forwards filename metadata captured after browser filename determination', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockResolvedValue({ action: 'queued' });
+      const apiDeps = createMockDeps({
+        desktopClient,
+        openProtocolNewTask: undefined,
+        filenameMetadata: {
+          resolve: vi.fn().mockResolvedValue({
+            filename: 'ИТОГИ ЛДУ 2026.xlsx',
+            source: 'determining-filename',
+          }),
+        },
+      });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+          finalUrl: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+          filename: 'download',
+          mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }),
+      );
+
+      expect(addDownload).toHaveBeenCalledWith({
+        url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+        referer: 'https://example.com/page',
+        cookie: undefined,
+        filename: 'ИТОГИ ЛДУ 2026.xlsx',
+      });
+    });
+
     it('forwards meaningful unicode filename as HTTP API filename', async () => {
       const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
       const addDownload = vi

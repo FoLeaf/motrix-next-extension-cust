@@ -19,7 +19,13 @@ export interface ExtensionManifest {
   };
 }
 
-const REQUIRED_PERMISSIONS = ['downloads', 'storage', 'contextMenus', 'notifications'] as const;
+const REQUIRED_PERMISSIONS = [
+  'downloads',
+  'storage',
+  'contextMenus',
+  'notifications',
+  'webRequest',
+] as const;
 const LOOPBACK_HOST_PERMISSIONS = ['http://127.0.0.1/*', 'http://localhost/*'] as const;
 const BROAD_DOWNLOAD_ORIGINS = ['https://*/*', 'http://*/*'] as const;
 

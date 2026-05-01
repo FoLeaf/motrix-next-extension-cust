@@ -32,6 +32,7 @@
     "lettercoder": "^0.1.1",
     "naive-ui": "^2.44.1",
     "picomatch": "^4.0.4",
+    "sanitize-filename": "^1.6.4",
     "vue": "^3.5.29",
     "zod": "^4.3.6"
   },

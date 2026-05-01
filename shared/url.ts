@@ -56,7 +56,10 @@ export function extractFilenameFromUrl(url: string): string | null {
     const parsed = new URL(url);
 
     // Priority 1: Content-Disposition query parameter (cloud drive presigned URLs)
-    const cdFilename = extractFromContentDisposition(parsed);
+    const raw =
+      parsed.searchParams.get('response-content-disposition') ??
+      parsed.searchParams.get('content-disposition');
+    const cdFilename = raw ? extractFilenameFromContentDisposition(raw) : null;
     if (cdFilename) return cdFilename;
 
     // Priority 2: URL pathname basename
@@ -72,67 +75,13 @@ export function extractFilenameFromUrl(url: string): string | null {
   }
 }
 
-/**
- * Extract filename from Content-Disposition query parameters.
- *
- * Cloud storage providers embed the real filename in URL query params:
- *   - `response-content-disposition` (Aliyun OSS, AWS S3, GCS)
- *   - `content-disposition` (some providers)
- *
- * Uses the RFC 6266–compliant `content-disposition` library for parsing,
- * which automatically handles `filename*` (RFC 5987) UTF-8 decoding
- * and prefers `filename*` over `filename` when both are present.
- */
-function extractFromContentDisposition(parsed: URL): string | null {
-  const raw =
-    parsed.searchParams.get('response-content-disposition') ??
-    parsed.searchParams.get('content-disposition');
-  if (!raw) return null;
-
-  // Try RFC 6266–compliant library first (handles filename* automatically)
+export function extractFilenameFromContentDisposition(header: string): string | null {
   try {
-    const { parameters } = contentDisposition.parse(raw);
+    const { parameters } = contentDisposition.parse(header);
     const filename = parameters.filename;
     if (filename) return decodeMimeEncodedWords(filename);
   } catch {
-    // Library rejects non-ASCII in filename param (strict RFC compliance).
-    // Fall through to regex extraction for non-compliant servers.
-  }
-
-  // Fallback: manual extraction for non-RFC-compliant Content-Disposition values.
-  // Some cloud providers use filename="中文.zip" (raw non-ASCII) without filename*.
-  return extractFilenameFallback(raw);
-}
-
-/**
- * Manual Content-Disposition filename extraction fallback.
- *
- * Handles non-RFC-compliant servers that embed raw non-ASCII characters
- * in the `filename` parameter without using `filename*` (RFC 5987).
- *
- * Priority: `filename*` (with percent-decode) → `filename` (with unquoting).
- */
-function extractFilenameFallback(header: string): string | null {
-  // Try filename* first (RFC 5987): filename*=UTF-8''%E4%B8%AD%E6%96%87.txt
-  const extMatch = /filename\*\s*=\s*(?:UTF-8|utf-8)?'[^']*'(.+?)(?:\s*;|$)/i.exec(header);
-  if (extMatch?.[1]) {
-    try {
-      return decodeMimeEncodedWords(decodeURIComponent(extMatch[1]));
-    } catch {
-      return decodeMimeEncodedWords(extMatch[1]);
-    }
-  }
-
-  // Try filename: filename="中文.zip" or filename=file.zip
-  const match = /filename\s*=\s*"?([^";]+)"?/i.exec(header);
-  if (match?.[1]) {
-    const value = match[1].trim();
-    // Try percent-decode in case value is encoded
-    try {
-      return decodeMimeEncodedWords(decodeURIComponent(value));
-    } catch {
-      return decodeMimeEncodedWords(value);
-    }
+    return null;
   }
 
   return null;

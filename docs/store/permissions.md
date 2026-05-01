@@ -30,6 +30,12 @@ Adds a single "Download with Motrix Next" context menu item that appears when ri
 Displays a brief desktop notification when an intercepted download cannot be delivered to Motrix Next. The desktop app owns normal task start, progress, completion, and error notifications.
 ```
 
+### `webRequest`
+
+```
+Observes response headers for downloads that are already being intercepted through the downloads API. This is used only to read the Content-Disposition filename header before the browser download is cancelled, so Motrix Next can preserve server-provided filenames for authenticated attachment downloads. The extension does not modify, block, redirect, or transmit remote requests to any external service.
+```
+
 ## Required Host Permissions
 
 ### `http://127.0.0.1/*` and `http://localhost/*`
@@ -71,7 +77,7 @@ Intercept browser downloads and delegate them to the Motrix Next desktop downloa
 ### Permission Justification Summary
 
 ```
-This extension intercepts browser downloads and sends them to a locally running download manager (Motrix Next). Required permissions: 'downloads' to intercept browser downloads, 'storage' for local settings persistence, 'contextMenus' for right-click download option, 'notifications' for delivery failure alerts. Required host permissions are limited to localhost (127.0.0.1) for communicating with the local Motrix Next HTTP API. Optional permissions (cookies, downloads.ui, broad http/https origins) are only requested when the user explicitly enables the matching setting. No data is collected, transmitted, or shared with any external service.
+This extension intercepts browser downloads and sends them to a locally running download manager (Motrix Next). Required permissions: 'downloads' to intercept browser downloads, 'webRequest' to observe Content-Disposition response headers for the same intercepted downloads, 'storage' for local settings persistence, 'contextMenus' for right-click download option, 'notifications' for delivery failure alerts. Required host permissions are limited to localhost (127.0.0.1) for communicating with the local Motrix Next HTTP API. Optional permissions (cookies, downloads.ui, broad http/https origins) are only requested when the user explicitly enables the matching setting. No data is collected, transmitted, or shared with any external service.
 ```
 
 ### Data Use Disclosures

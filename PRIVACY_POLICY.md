@@ -72,10 +72,11 @@ Where `{port}` is the user-configured API port (default: 16801).
 | `storage`                                  | Save user settings, site rules, and diagnostic logs locally                      |
 | `contextMenus`                             | Add "Download with Motrix Next" to the right-click menu                          |
 | `notifications`                            | Show desktop notifications for download events                                   |
+| `webRequest`                               | Read download response filename headers before delegated downloads are cancelled |
 | `cookies` _(optional)_                     | Forward cookies to local Motrix Next for authenticated downloads                 |
 | `downloads.ui` _(optional)_                | Hide the browser download bar after interception                                 |
 | `http://127.0.0.1/*`, `http://localhost/*` | Communicate with the local Motrix Next HTTP API                                  |
-| `https://*/*`, `http://*/*` _(optional)_   | Read cookies from any origin (required for cookie forwarding)                    |
+| `https://*/*`, `http://*/*` _(optional)_   | Read cookies and response filename headers for delegated downloads               |
 
 ## Third-Party Services
 

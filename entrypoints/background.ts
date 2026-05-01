@@ -1,6 +1,7 @@
 import { browser, type Browser } from 'wxt/browser';
 import { storage as wxtStorage } from '#imports';
 import { DownloadOrchestrator } from '@/lib/download';
+import { DownloadFilenameMetadataStore } from '@/lib/download/filename-metadata';
 import { DesktopApiClient } from '@/lib/api';
 import {
   DownloadBarService,
@@ -40,6 +41,7 @@ export default defineBackground(() => {
         setUiOptions: (opts) => browser.downloads.setUiOptions(opts),
       });
   const diagnosticLog = new DiagnosticLog();
+  const filenameMetadata = new DownloadFilenameMetadataStore();
 
   const storageService = new StorageService(createWxtStorageApi(wxtStorage));
   const permissionService = new PermissionService({
@@ -202,6 +204,7 @@ export default defineBackground(() => {
     getSettings: () => settings,
     getSiteRules: () => siteRules,
     getTabUrl,
+    filenameMetadata,
     desktopClient,
     wakeDesktop: async () =>
       wakeService.wakeAndWaitForApi({
@@ -263,6 +266,67 @@ export default defineBackground(() => {
       });
     },
   });
+
+  type SuggestedFilename = (suggestion?: { filename: string; conflictAction?: string }) => void;
+  type DeterminingFilenameItem = {
+    id: number;
+    url: string;
+    finalUrl?: string;
+    filename?: string;
+  };
+  type DownloadsWithDeterminingFilename = typeof browser.downloads & {
+    onDeterminingFilename?: {
+      addListener: (
+        callback: (item: DeterminingFilenameItem, suggest: SuggestedFilename) => void,
+      ) => void;
+    };
+  };
+  type WebRequestHeader = { name?: string; value?: string };
+  type WebRequestHeadersDetails = { url: string; responseHeaders?: WebRequestHeader[] };
+  type WebRequestApi = {
+    onHeadersReceived?: {
+      addListener: (
+        callback: (details: WebRequestHeadersDetails) => void,
+        filter: { urls: string[] },
+        extraInfoSpec?: string[],
+      ) => void;
+    };
+  };
+
+  function registerFilenameMetadataListeners(): void {
+    const downloads = browser.downloads as DownloadsWithDeterminingFilename;
+    downloads.onDeterminingFilename?.addListener((item, suggest) => {
+      try {
+        filenameMetadata.rememberDeterminedFilename(item);
+      } finally {
+        suggest();
+      }
+    });
+
+    const browserWithWebRequest = browser as typeof browser & { webRequest?: WebRequestApi };
+    try {
+      browserWithWebRequest.webRequest?.onHeadersReceived?.addListener(
+        (details): undefined => {
+          const contentDisposition = details.responseHeaders?.find(
+            (header) => header.name?.toLowerCase() === 'content-disposition',
+          )?.value;
+          if (contentDisposition) {
+            filenameMetadata.rememberContentDisposition(details.url, contentDisposition);
+          }
+          return undefined;
+        },
+        { urls: ['http://*/*', 'https://*/*'] },
+        ['responseHeaders'],
+      );
+    } catch (e) {
+      logWarn(
+        'download_fallback',
+        `Response header metadata listener unavailable: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+
+  registerFilenameMetadataListeners();
 
   // ─── Download interception ─────────────────────────────
   //

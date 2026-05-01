@@ -2,6 +2,12 @@ import type { DownloadSettings, SiteRule, FilterContext } from '@/shared/types';
 import type { DiagnosticInput } from '@/lib/storage/diagnostic-log';
 import { evaluateFilterPipeline, createFilterPipeline } from './filter';
 import { decodeMimeEncodedWords, extractFilenameFromUrl } from '@/shared/url';
+import {
+  normalizeFilename,
+  UNRESOLVED_FILENAME,
+  type FilenameMetadata,
+  type FilenameSource,
+} from './filename-metadata';
 import type { DesktopApiClient } from '@/lib/api/desktop-client';
 import { ApiAuthError } from '@/shared/errors';
 
@@ -29,6 +35,9 @@ export interface OrchestratorDeps {
   getSettings: () => DownloadSettings;
   getSiteRules: () => SiteRule[];
   getTabUrl: (id?: number) => Promise<string>;
+  filenameMetadata?: {
+    resolve: (item: DownloadItem) => Promise<FilenameMetadata | undefined>;
+  };
   /**
    * HTTP API client for direct communication with the desktop app.
    * When available and reachable, this is the primary download submission path.
@@ -53,7 +62,7 @@ export interface OrchestratorDeps {
 }
 
 /** Shape of a browser DownloadItem as received from chrome.downloads events. */
-interface DownloadItem {
+export interface DownloadItem {
   id: number;
   url: string;
   finalUrl: string;
@@ -65,7 +74,8 @@ interface DownloadItem {
   referrer?: string;
 }
 
-const GENERIC_FILENAME_HINTS = new Set(['download']);
+const GENERIC_FILENAME_HINTS = new Set(['download', UNRESOLVED_FILENAME]);
+type FilenameHintSource = FilenameSource | 'download-item' | 'url';
 
 function extensionOf(filename: string): string {
   const dot = filename.lastIndexOf('.');
@@ -73,17 +83,68 @@ function extensionOf(filename: string): string {
   return filename.slice(dot + 1).toLowerCase();
 }
 
-function resolveFilenameHint(url: string, filename: string): string | undefined {
-  const trimmed = decodeMimeEncodedWords(filename).trim();
+function filenameStem(filename: string): string {
+  const dot = filename.lastIndexOf('.');
+  return dot > 0 ? filename.slice(0, dot) : filename;
+}
+
+function extractPathBasename(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const raw = parsed.pathname.split('/').filter(Boolean).pop() ?? '';
+    return normalizeFilename(decodeURIComponent(raw));
+  } catch {
+    return '';
+  }
+}
+
+function isWeakBrowserFilename(url: string, filename: string): boolean {
+  const lower = filename.toLowerCase();
+  const stem = filenameStem(filename).toLowerCase();
+  if (GENERIC_FILENAME_HINTS.has(lower) || GENERIC_FILENAME_HINTS.has(stem)) return true;
+
+  const pathBasename = extractPathBasename(url);
+  const pathHasExtension = extensionOf(pathBasename) !== '';
+  if (pathBasename && !pathHasExtension && stem === pathBasename.toLowerCase()) return true;
+
+  return /^\d+$/.test(stem) && !pathHasExtension;
+}
+
+function resolveFilenameHint(
+  url: string,
+  candidate: { filename: string; source: FilenameHintSource },
+): string | undefined {
+  const trimmed = normalizeFilename(decodeMimeEncodedWords(candidate.filename));
   if (!trimmed) return undefined;
-  if (GENERIC_FILENAME_HINTS.has(trimmed.toLowerCase())) return undefined;
+  if (candidate.source !== 'content-disposition' && candidate.source !== 'url') {
+    if (isWeakBrowserFilename(url, trimmed)) return undefined;
+  }
   const urlFilename = extractFilenameFromUrl(url);
   if (urlFilename) {
     const hintExt = extensionOf(trimmed);
     const urlExt = extensionOf(urlFilename);
-    if (hintExt && urlExt && hintExt !== urlExt) return undefined;
+    if (candidate.source !== 'content-disposition' && hintExt && urlExt && hintExt !== urlExt) {
+      return undefined;
+    }
   }
   return trimmed;
+}
+
+function resolveBestFilenameHint(
+  url: string,
+  metadata: FilenameMetadata | undefined,
+  itemFilename: string,
+): { filename?: string; source: string } {
+  const candidates: Array<{ filename: string; source: FilenameHintSource }> = [];
+  if (metadata) candidates.push(metadata);
+  candidates.push({ filename: itemFilename, source: 'download-item' });
+
+  for (const candidate of candidates) {
+    const filename = resolveFilenameHint(url, candidate);
+    if (filename) return { filename, source: candidate.source };
+  }
+
+  return { source: 'none' };
 }
 
 // ─── Orchestrator ───────────────────────────────────────
@@ -185,8 +246,11 @@ export class DownloadOrchestrator {
 
     // ─── Route to desktop app ───────────────────
     const effectiveUrl = item.finalUrl || item.url;
-    const filenameHint = resolveFilenameHint(effectiveUrl, item.filename);
-    const displayName = filenameHint || extractFilenameFromUrl(effectiveUrl) || 'download';
+    const metadata = await this.resolveFilenameMetadata(item);
+    const resolvedFilename = resolveBestFilenameHint(effectiveUrl, metadata, item.filename);
+    const filenameHint = resolvedFilename.filename;
+    const filenameSource = resolvedFilename.source;
+    const displayName = filenameHint || extractFilenameFromUrl(effectiveUrl) || UNRESOLVED_FILENAME;
     const cookie = await this.collectCookies(effectiveUrl);
 
     await this.safeCancel(item.id);
@@ -197,6 +261,7 @@ export class DownloadOrchestrator {
       cookie,
       displayName,
       filenameHint,
+      filenameSource,
     );
     if (!routed) {
       // Both paths failed — can't route to desktop
@@ -220,11 +285,14 @@ export class DownloadOrchestrator {
    * @throws when no routing path is available
    */
   async sendUrl(url: string, tabUrl: string): Promise<string> {
-    const filenameHint = extractFilenameFromUrl(url) ?? undefined;
+    const extractedFilename = extractFilenameFromUrl(url) ?? '';
+    const filenameHint = extractedFilename
+      ? resolveFilenameHint(url, { filename: extractedFilename, source: 'url' })
+      : undefined;
     const displayName = filenameHint || url.split('/').pop() || 'download';
     const cookie = await this.collectCookies(url);
 
-    const routed = await this.sendToDesktop(url, tabUrl, cookie, displayName, filenameHint);
+    const routed = await this.sendToDesktop(url, tabUrl, cookie, displayName, filenameHint, 'url');
     if (!routed) {
       throw new Error(
         'Desktop app routing unavailable: neither HTTP API nor protocol handler provided',
@@ -246,6 +314,7 @@ export class DownloadOrchestrator {
     cookie: string,
     displayName: string,
     filenameHint?: string,
+    filenameSource: string = 'none',
   ): Promise<boolean> {
     // Primary: HTTP API
     if (this.deps.desktopClient) {
@@ -264,6 +333,7 @@ export class DownloadOrchestrator {
           context: {
             url,
             filename: displayName,
+            filenameSource,
             action: response.action,
             ...(response.gid ? { gid: response.gid } : {}),
             hasCookie: cookie.length > 0,
@@ -323,6 +393,7 @@ export class DownloadOrchestrator {
                 context: {
                   url,
                   filename: displayName,
+                  filenameSource,
                   action: retryResponse.action,
                   ...(retryResponse.gid ? { gid: retryResponse.gid } : {}),
                   hasCookie: cookie.length > 0,
@@ -384,7 +455,12 @@ export class DownloadOrchestrator {
         level: 'info',
         code: 'download_routed',
         message: `Routed via deep-link: ${displayName}`,
-        context: { url, filename: displayName, hasCookie: false },
+        context: {
+          url,
+          filename: displayName,
+          filenameSource,
+          hasCookie: false,
+        },
       });
       return true;
     }
@@ -436,6 +512,21 @@ export class DownloadOrchestrator {
         context: { url },
       });
       return ''; // Graceful degradation — never block the download
+    }
+  }
+
+  private async resolveFilenameMetadata(item: DownloadItem): Promise<FilenameMetadata | undefined> {
+    if (!this.deps.filenameMetadata) return undefined;
+    try {
+      return await this.deps.filenameMetadata.resolve(item);
+    } catch (e) {
+      this.deps.diagnosticLog.append({
+        level: 'warn',
+        code: 'download_fallback',
+        message: `Filename metadata resolution failed: ${e instanceof Error ? e.message : String(e)}`,
+        context: { url: item.finalUrl || item.url },
+      });
+      return undefined;
     }
   }
 }

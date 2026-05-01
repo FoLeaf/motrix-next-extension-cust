@@ -109,7 +109,7 @@ Yes. This extension sends downloads to the Motrix Next desktop app via its HTTP 
 
 <br>
 
-The broad host permissions (`*://*/*`) are **optional** — only requested when you explicitly enable "Forward Cookies" in Settings. The `chrome.cookies.getAll()` API requires matching host permissions for the target domain, and since downloads can come from any site, the extension needs wildcard access to read cookies. These permissions are never used for any other purpose, and cookies are sent only to the Motrix Next API on `127.0.0.1`.
+The broad host permissions (`*://*/*`) are **optional** — only requested when you explicitly enable "Forward Cookies" in Settings. The `chrome.cookies.getAll()` API requires matching host permissions for the target domain, and since downloads can come from any site, the extension needs wildcard access to read cookies. The same grant also lets the extension read `Content-Disposition` filename headers for delegated downloads. Cookies and filenames are sent only to the Motrix Next API on `127.0.0.1`.
 
 </details>
 
