@@ -12,6 +12,8 @@ const FIREFOX_PROFILE = resolve('.wxt/firefox-data');
 mkdirSync(CHROMIUM_PROFILE, { recursive: true });
 mkdirSync(FIREFOX_PROFILE, { recursive: true });
 
+const CHUNK_SIZE_WARNING_LIMIT_KB = 800;
+
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
@@ -50,6 +52,12 @@ export default defineConfig({
     }),
   }),
   vite: () => ({
+    build: {
+      // WXT builds the service worker as an IIFE, so manual code-splitting is
+      // not valid for every entrypoint. Keep the warning threshold explicit
+      // instead of relying on Vite's generic web-app default.
+      chunkSizeWarningLimit: CHUNK_SIZE_WARNING_LIMIT_KB,
+    },
     plugins: [
       tailwindcss(),
       Components({

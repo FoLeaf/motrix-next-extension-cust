@@ -103,13 +103,21 @@ export interface I18nContext {
 
 export const I18N_KEY: InjectionKey<I18nContext> = Symbol('i18n');
 
+export interface BrowserLocaleApi {
+  getUILanguage: () => string;
+}
+
+export interface CreateI18nOptions {
+  localeApi?: BrowserLocaleApi;
+}
+
 /**
  * Detect browser locale using the most accurate signal sources.
- * Priority: chrome.i18n.getUILanguage() → navigator.language → fallback.
+ * Priority: injected extension locale API → navigator.language → fallback.
  */
-function detectBrowserLocale(): string {
+function detectBrowserLocale(localeApi?: BrowserLocaleApi): string {
   try {
-    const uiLang = chrome.i18n.getUILanguage();
+    const uiLang = localeApi?.getUILanguage();
     if (uiLang) return resolveLocaleId(uiLang);
   } catch {
     /* Not in extension context (e.g. unit test) */
@@ -126,8 +134,12 @@ function detectBrowserLocale(): string {
  * Create an i18n context for a Vue app root.
  * Call once in App.vue setup, then `provide(I18N_KEY, ctx)`.
  */
-export function createI18n(initialLocale: string = 'auto'): I18nContext {
-  const resolved = initialLocale === 'auto' ? detectBrowserLocale() : initialLocale;
+export function createI18n(
+  initialLocale: string = 'auto',
+  options: CreateI18nOptions = {},
+): I18nContext {
+  const resolved =
+    initialLocale === 'auto' ? detectBrowserLocale(options.localeApi) : initialLocale;
   const engine = new I18nEngine(resolved);
   const locale = ref(initialLocale);
 
@@ -136,12 +148,12 @@ export function createI18n(initialLocale: string = 'auto'): I18nContext {
 
   const effectiveLocale = computed(() => {
     void _v.value; // tracked dependency
-    return locale.value === 'auto' ? detectBrowserLocale() : locale.value;
+    return locale.value === 'auto' ? detectBrowserLocale(options.localeApi) : locale.value;
   });
 
   function setLocale(id: string): void {
     locale.value = id;
-    engine.setLocale(id === 'auto' ? detectBrowserLocale() : id);
+    engine.setLocale(id === 'auto' ? detectBrowserLocale(options.localeApi) : id);
     _v.value++;
   }
 

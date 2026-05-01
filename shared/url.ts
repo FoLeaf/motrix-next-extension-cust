@@ -11,6 +11,25 @@
  * Baidu, 115, and Aliyun Drive presigned URLs.
  */
 import contentDisposition from 'content-disposition';
+import { decodeMimeWords } from 'lettercoder';
+
+/**
+ * Decode RFC 2047 MIME encoded-words when servers put them in filename fields.
+ *
+ * RFC 6266 prefers `filename*` for HTTP, but some mail/CDN download endpoints
+ * still emit `filename="=?UTF-8?B?...?="`. Keep malformed values unchanged so
+ * filename extraction remains best-effort and never blocks routing.
+ */
+export function decodeMimeEncodedWords(value: string): string {
+  if (!value.includes('=?')) return value;
+
+  try {
+    const decoded = decodeMimeWords(value);
+    return decoded || value;
+  } catch {
+    return value;
+  }
+}
 
 /**
  * Extract a filename from a URL.
@@ -74,7 +93,7 @@ function extractFromContentDisposition(parsed: URL): string | null {
   try {
     const { parameters } = contentDisposition.parse(raw);
     const filename = parameters.filename;
-    if (filename) return filename;
+    if (filename) return decodeMimeEncodedWords(filename);
   } catch {
     // Library rejects non-ASCII in filename param (strict RFC compliance).
     // Fall through to regex extraction for non-compliant servers.
@@ -98,9 +117,9 @@ function extractFilenameFallback(header: string): string | null {
   const extMatch = /filename\*\s*=\s*(?:UTF-8|utf-8)?'[^']*'(.+?)(?:\s*;|$)/i.exec(header);
   if (extMatch?.[1]) {
     try {
-      return decodeURIComponent(extMatch[1]);
+      return decodeMimeEncodedWords(decodeURIComponent(extMatch[1]));
     } catch {
-      return extMatch[1];
+      return decodeMimeEncodedWords(extMatch[1]);
     }
   }
 
@@ -110,9 +129,9 @@ function extractFilenameFallback(header: string): string | null {
     const value = match[1].trim();
     // Try percent-decode in case value is encoded
     try {
-      return decodeURIComponent(value);
+      return decodeMimeEncodedWords(decodeURIComponent(value));
     } catch {
-      return value;
+      return decodeMimeEncodedWords(value);
     }
   }
 

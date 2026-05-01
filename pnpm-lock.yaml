@@ -16,6 +16,18 @@ importers:
       content-disposition:
         specifier: ^1.1.0
         version: 1.1.0
+      fast-deep-equal:
+        specifier: ^3.1.3
+        version: 3.1.3
+      klona:
+        specifier: ^2.0.6
+        version: 2.0.6
+      ky:
+        specifier: ^2.0.2
+        version: 2.0.2
+      lettercoder:
+        specifier: ^0.1.1
+        version: 0.1.1
       naive-ui:
         specifier: ^2.44.1
         version: 2.44.1(vue@3.5.31(typescript@5.9.3))
@@ -1465,6 +1477,12 @@ packages:
       }
     engines: { node: 18 || 20 || >=22 }
 
+  base64-js@1.5.1:
+    resolution:
+      {
+        integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==,
+      }
+
   bluebird@3.7.2:
     resolution:
       {
@@ -2757,6 +2775,13 @@ packages:
       }
     engines: { node: '>=6' }
 
+  klona@2.0.6:
+    resolution:
+      {
+        integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==,
+      }
+    engines: { node: '>= 8' }
+
   ky@1.14.3:
     resolution:
       {
@@ -2764,12 +2789,25 @@ packages:
       }
     engines: { node: '>=18' }
 
+  ky@2.0.2:
+    resolution:
+      {
+        integrity: sha512-/GmXpo9F9W+f8n4Ivr2iH+7h7wL7jLbLKWkMlpflcCRb6kGjBfTlASEXaZ9qUgNTn4VgS0P2pwxxzQ4EM6Ulgg==,
+      }
+    engines: { node: '>=22' }
+
   latest-version@9.0.0:
     resolution:
       {
         integrity: sha512-7W0vV3rqv5tokqkBAFV1LbR7HPOWzXQDpDgEuib/aJ1jsZZx6x3c2mBI+TJhJzOhkGeaLbCKEHXEXLfirtG2JA==,
       }
     engines: { node: '>=18' }
+
+  lettercoder@0.1.1:
+    resolution:
+      {
+        integrity: sha512-htZUqrqbrRN6M7+K9kGZF59zLU08x9wCSrfb762FYbwwWU6/kcosR/jw4XG5AmsD1z6F4xQF9OGQ+ahoU3u22g==,
+      }
 
   levn@0.4.1:
     resolution:
@@ -5160,6 +5198,8 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
+  base64-js@1.5.1: {}
+
   bluebird@3.7.2: {}
 
   boolbase@1.0.0: {}
@@ -5853,11 +5893,19 @@ snapshots:
 
   kleur@3.0.3: {}
 
+  klona@2.0.6: {}
+
   ky@1.14.3: {}
+
+  ky@2.0.2: {}
 
   latest-version@9.0.0:
     dependencies:
       package-json: 10.0.1
+
+  lettercoder@0.1.1:
+    dependencies:
+      base64-js: 1.5.1
 
   levn@0.4.1:
     dependencies:

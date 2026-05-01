@@ -32,8 +32,8 @@ export class ApiUnreachableError extends ApiError {
 
 /** API secret is incorrect. */
 export class ApiAuthError extends ApiError {
-  constructor() {
-    super('API secret is incorrect', 7);
+  constructor(cause?: unknown) {
+    super('HTTP 401 Unauthorized: API secret is incorrect', 401, cause);
     this.name = 'ApiAuthError';
   }
 }

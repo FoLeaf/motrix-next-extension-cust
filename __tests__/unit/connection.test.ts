@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ConnectionService, ConnectionStatus } from '@/lib/services/connection';
+import { ApiAuthError, ApiTimeoutError, ApiUnreachableError } from '@/shared/errors';
 
 import type { PingResponse, StatResponse } from '@/lib/api/desktop-client';
 
@@ -64,10 +65,33 @@ describe('ConnectionService', () => {
       expect(result.error).toBe('ApiAuthError');
     });
 
+    it('classifies shared API auth errors without relying on message text', async () => {
+      const client = mockClient({
+        getStat: vi.fn().mockRejectedValue(new ApiAuthError()),
+      });
+      const service = new ConnectionService(client);
+
+      const result = await service.checkConnection();
+
+      expect(result.status).toBe(ConnectionStatus.Disconnected);
+      expect(result.version).toBe('3.7.3');
+      expect(result.error).toBe('ApiAuthError');
+    });
+
     it('returns timeout error on AbortError', async () => {
       const err = new Error('timeout');
       err.name = 'AbortError';
       const client = mockClient({ ping: vi.fn().mockRejectedValue(err) });
+      const service = new ConnectionService(client);
+
+      const result = await service.checkConnection();
+
+      expect(result.status).toBe(ConnectionStatus.Disconnected);
+      expect(result.error).toBe('ApiTimeoutError');
+    });
+
+    it('classifies shared API timeout errors', async () => {
+      const client = mockClient({ ping: vi.fn().mockRejectedValue(new ApiTimeoutError(5000)) });
       const service = new ConnectionService(client);
 
       const result = await service.checkConnection();
@@ -96,6 +120,18 @@ describe('ConnectionService', () => {
 
       expect(result.status).toBe(ConnectionStatus.Disconnected);
       expect(result.version).toBeNull();
+      expect(result.error).toBe('ApiUnreachableError');
+    });
+
+    it('classifies shared API unreachable errors', async () => {
+      const client = mockClient({
+        ping: vi.fn().mockRejectedValue(new ApiUnreachableError(new Error('ECONNREFUSED'))),
+      });
+      const service = new ConnectionService(client);
+
+      const result = await service.checkConnection();
+
+      expect(result.status).toBe(ConnectionStatus.Disconnected);
       expect(result.error).toBe('ApiUnreachableError');
     });
   });

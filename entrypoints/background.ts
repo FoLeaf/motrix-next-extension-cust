@@ -1,3 +1,5 @@
+import { browser, type Browser } from 'wxt/browser';
+import { storage as wxtStorage } from '#imports';
 import { DownloadOrchestrator } from '@/lib/download';
 import { DesktopApiClient } from '@/lib/api';
 import {
@@ -9,6 +11,7 @@ import {
 import {
   DiagnosticLog,
   StorageService,
+  createWxtStorageApi,
   parseDownloadSettings,
   parseSiteRules,
 } from '@/lib/storage';
@@ -26,16 +29,16 @@ export default defineBackground(() => {
   let siteRules: SiteRule[] = [];
 
   const bgI18n = new I18nEngine(FALLBACK_LOCALE);
-  // Firefox does not support chrome.downloads.setUiOptions — create a no-op
+  // Firefox does not support browser.downloads.setUiOptions — create a no-op
   // service so call sites don't need null checks.
   const downloadBarService = import.meta.env.FIREFOX
     ? new DownloadBarService({ setUiOptions: () => Promise.resolve() })
     : new DownloadBarService({
-        setUiOptions: (opts) => chrome.downloads.setUiOptions(opts),
+        setUiOptions: (opts) => browser.downloads.setUiOptions(opts),
       });
   const diagnosticLog = new DiagnosticLog();
 
-  const storageService = new StorageService(chrome.storage.local);
+  const storageService = new StorageService(createWxtStorageApi(wxtStorage));
 
   // ─── Logging helpers ──────────────────────────────────
 
@@ -94,7 +97,7 @@ export default defineBackground(() => {
       // Hydrate i18n locale
       const effectiveLocale =
         data.uiPrefs.locale === 'auto'
-          ? resolveLocaleId(chrome.i18n.getUILanguage())
+          ? resolveLocaleId(browser.i18n.getUILanguage())
           : data.uiPrefs.locale;
       bgI18n.setLocale(effectiveLocale);
 
@@ -144,7 +147,7 @@ export default defineBackground(() => {
   // ─── Get tab URL for referer ──────────────────────
   async function getTabUrl(): Promise<string> {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
       return tab?.url ?? '';
     } catch (e) {
       logWarn(
@@ -158,11 +161,11 @@ export default defineBackground(() => {
   // ─── Orchestrator ───────────────────────────────────
   const orchestrator = new DownloadOrchestrator({
     downloads: {
-      cancel: (id) => chrome.downloads.cancel(id),
-      erase: (query) => chrome.downloads.erase(query).then(() => {}),
+      cancel: (id) => browser.downloads.cancel(id),
+      erase: (query) => browser.downloads.erase(query).then(() => {}),
     },
     cookies: {
-      getAll: (details) => chrome.cookies.getAll(details),
+      getAll: (details) => browser.cookies.getAll(details),
     },
     diagnosticLog: {
       append: (event: DiagnosticInput) => {
@@ -178,13 +181,13 @@ export default defineBackground(() => {
       wakeService.wakeAndWaitForApi({
         checkApi: () => desktopClient.isReachable(),
         openProtocol: async () => {
-          const tab = await chrome.tabs.create({
+          const tab = await browser.tabs.create({
             url: buildProtocolUrl(ProtocolAction.NewTask, {}),
             active: true,
           });
           const tabId = tab.id;
           return () => {
-            if (tabId) chrome.tabs.remove(tabId).catch(() => {});
+            if (tabId) browser.tabs.remove(tabId).catch(() => {});
           };
         },
       }),
@@ -200,22 +203,22 @@ export default defineBackground(() => {
       const protocolUrl = buildProtocolUrl(ProtocolAction.NewTask, params);
       // Create tab for the protocol URL — active:true so the "Open MotrixNext?"
       // confirmation dialog gets focus and is visible to the user.
-      const tab = await chrome.tabs.create({ url: protocolUrl, active: true });
+      const tab = await browser.tabs.create({ url: protocolUrl, active: true });
       if (tab.id) {
         const tabId = tab.id;
         // Clean up the tab once the protocol handoff completes.
         // After the user clicks "Open", Chrome navigates to about:blank.
         const onUpdated = (id: number, info: { url?: string }) => {
           if (id === tabId && info.url === 'about:blank') {
-            chrome.tabs.onUpdated.removeListener(onUpdated);
-            chrome.tabs.remove(tabId).catch(() => {});
+            browser.tabs.onUpdated.removeListener(onUpdated);
+            browser.tabs.remove(tabId).catch(() => {});
           }
         };
-        chrome.tabs.onUpdated.addListener(onUpdated);
+        browser.tabs.onUpdated.addListener(onUpdated);
         // Safety fallback: clean up after 30s regardless
         setTimeout(() => {
-          chrome.tabs.onUpdated.removeListener(onUpdated);
-          chrome.tabs.remove(tabId).catch(() => {});
+          browser.tabs.onUpdated.removeListener(onUpdated);
+          browser.tabs.remove(tabId).catch(() => {});
         }, 30000);
       }
     },
@@ -228,7 +231,7 @@ export default defineBackground(() => {
         'Could not reach Motrix Next',
       );
       try {
-        chrome.notifications.create(payload.id, payload.options);
+        browser.notifications.create(payload.id, payload.options);
       } catch (e) {
         logWarn(
           'notification_create_failed',
@@ -253,7 +256,7 @@ export default defineBackground(() => {
   // NeatDownloadManager, Free Download Manager, and other MV3 extensions.
   // It fires reliably for every download regardless of how it was initiated.
 
-  chrome.downloads.onCreated.addListener((item) => {
+  browser.downloads.onCreated.addListener((item) => {
     void ensureConfigLoaded().then(async () => {
       try {
         await orchestrator.handleCreated({
@@ -288,17 +291,17 @@ export default defineBackground(() => {
   function registerContextMenus(): void {
     const menuItems = ContextMenuService.buildMenuItems();
     for (const menuItem of menuItems) {
-      chrome.contextMenus.create(
+      browser.contextMenus.create(
         {
           id: menuItem.id,
           title: bgI18n.t('context_menu_download', menuItem.title),
           contexts: menuItem.contexts as [
-            chrome.contextMenus.ContextType,
-            ...chrome.contextMenus.ContextType[],
+            Browser.contextMenus.ContextType,
+            ...Browser.contextMenus.ContextType[],
           ],
         },
         // Ignore "duplicate id" error on re-registration
-        () => void chrome.runtime.lastError,
+        () => void browser.runtime.lastError,
       );
     }
   }
@@ -307,13 +310,13 @@ export default defineBackground(() => {
   function updateContextMenuLocale(): void {
     const menuItems = ContextMenuService.buildMenuItems();
     for (const menuItem of menuItems) {
-      chrome.contextMenus.update(menuItem.id, {
+      browser.contextMenus.update(menuItem.id, {
         title: bgI18n.t('context_menu_download', menuItem.title),
       });
     }
   }
 
-  chrome.contextMenus.onClicked.addListener((info) => {
+  browser.contextMenus.onClicked.addListener((info) => {
     const rawUrl = ContextMenuService.extractUrl({
       linkUrl: info.linkUrl,
       srcUrl: info.srcUrl,
@@ -344,22 +347,22 @@ export default defineBackground(() => {
   });
 
   // Notification clicks
-  chrome.notifications.onClicked.addListener((notificationId) => {
+  browser.notifications.onClicked.addListener((notificationId) => {
     const action = NotificationService.resolveClickAction(notificationId);
     switch (action) {
       case 'launch-app':
-        void chrome.tabs.create({ url: buildProtocolUrl(), active: false }).then((tab) => {
-          if (tab.id) setTimeout(() => chrome.tabs.remove(tab.id!), 500);
+        void browser.tabs.create({ url: buildProtocolUrl(), active: false }).then((tab) => {
+          if (tab.id) setTimeout(() => browser.tabs.remove(tab.id!), 500);
         });
         break;
       case 'open-options':
-        void chrome.runtime.openOptionsPage();
+        void browser.runtime.openOptionsPage();
         break;
     }
   });
 
   // Magnet link interception from content script
-  chrome.runtime.onMessage.addListener((msg) => {
+  browser.runtime.onMessage.addListener((msg) => {
     if (msg?.type === 'HANDLE_MAGNET' && typeof msg.url === 'string') {
       logInfo('magnet_intercepted', `Magnet link intercepted: ${msg.url as string}`, {
         url: msg.url as string,
@@ -383,7 +386,7 @@ export default defineBackground(() => {
   });
 
   // Storage change listener — update config with schema validation
-  chrome.storage.onChanged.addListener((changes, area) => {
+  browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
 
     const changedKeys = Object.keys(changes);
@@ -411,7 +414,7 @@ export default defineBackground(() => {
       const prefs = changes.uiPrefs.newValue as { locale?: string };
       if (prefs.locale) {
         const effectiveLocale =
-          prefs.locale === 'auto' ? resolveLocaleId(chrome.i18n.getUILanguage()) : prefs.locale;
+          prefs.locale === 'auto' ? resolveLocaleId(browser.i18n.getUILanguage()) : prefs.locale;
         bgI18n.setLocale(effectiveLocale);
         updateContextMenuLocale();
       }
@@ -427,7 +430,7 @@ export default defineBackground(() => {
   });
 
   // ─── Extension install / update ───────────────────────
-  chrome.runtime.onInstalled.addListener((details) => {
+  browser.runtime.onInstalled.addListener((details) => {
     if (details.reason === 'install') {
       logInfo('extension_installed', 'Extension installed');
     } else if (details.reason === 'update') {
@@ -436,14 +439,14 @@ export default defineBackground(() => {
         `Extension updated from ${details.previousVersion ?? 'unknown'}`,
         {
           previousVersion: details.previousVersion ?? 'unknown',
-          currentVersion: chrome.runtime.getManifest().version,
+          currentVersion: browser.runtime.getManifest().version,
         },
       );
     }
   });
 
   // ─── Permission changes ───────────────────────────────
-  chrome.permissions.onAdded?.addListener((permissions) => {
+  browser.permissions.onAdded?.addListener((permissions) => {
     logInfo(
       'permission_granted',
       `Permissions granted: ${permissions.permissions?.join(', ') ?? 'origins'}`,
@@ -454,7 +457,7 @@ export default defineBackground(() => {
     );
   });
 
-  chrome.permissions.onRemoved?.addListener((permissions) => {
+  browser.permissions.onRemoved?.addListener((permissions) => {
     logWarn(
       'permission_revoked',
       `Permissions revoked: ${permissions.permissions?.join(', ') ?? 'origins'}`,
@@ -466,7 +469,10 @@ export default defineBackground(() => {
   });
 
   // ─── Initial load + context menu registration ─────────
-  logInfo('extension_started', `Service worker started (v${chrome.runtime.getManifest().version})`);
+  logInfo(
+    'extension_started',
+    `Service worker started (v${browser.runtime.getManifest().version})`,
+  );
 
   void ensureConfigLoaded().then(() => {
     // Register context menu after locale is loaded — fixes i18n timing

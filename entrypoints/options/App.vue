@@ -14,8 +14,10 @@
  *   - Diagnostics: read-only / immediate persist on clear (useDiagnostics)
  */
 import { ref, provide, onMounted, onUnmounted, computed, watch } from 'vue';
+import { browser } from 'wxt/browser';
+import { storage as wxtStorage } from '#imports';
 import { NConfigProvider, createDiscreteApi } from 'naive-ui';
-import { StorageService } from '@/lib/storage';
+import { StorageService, createWxtStorageApi } from '@/lib/storage';
 import type { ConnectionConfig, DiagnosticEvent } from '@/shared/types';
 import {
   DEFAULT_CONNECTION_CONFIG,
@@ -47,7 +49,7 @@ const { naiveTheme, themeOverrides, setTheme } = useTheme(colorSchemeId);
 
 // ─── i18n ───────────────────────────────────────────────────────────
 
-const i18nCtx = createI18n();
+const i18nCtx = createI18n('auto', { localeApi: browser.i18n });
 provide(I18N_KEY, i18nCtx);
 const { t: i18n, tEn: i18nEn, tSub: i18nSub, effectiveLocale, setLocale: i18nSetLocale } = i18nCtx;
 const { naiveLocale, naiveDateLocale } = useNaiveLocale(effectiveLocale);
@@ -65,7 +67,7 @@ const activeSection = ref('connection');
 
 // ─── StorageService ──────────────────────────────────────────────────
 
-const storageService = new StorageService(chrome.storage.local);
+const storageService = new StorageService(createWxtStorageApi(wxtStorage));
 
 // ─── Composables ────────────────────────────────────────────────────
 
@@ -75,7 +77,9 @@ const {
   hydrate: hydrateDiagnostics,
   clearDiagnosticLog,
   exportDiagnosticReport,
-} = useDiagnostics(storageService);
+} = useDiagnostics(storageService, {
+  getManifest: () => browser.runtime.getManifest(),
+});
 const appearance = useAppearance(storageService, setTheme, (id) => {
   colorSchemeId.value = id;
 });
@@ -154,7 +158,7 @@ const { connectionStatus, connectionVersion, connectionError, testingConnection,
 
 // ─── Extension Version ─────────────────────────────────────────────
 
-const extensionVersion = chrome.runtime.getManifest().version;
+const extensionVersion = browser.runtime.getManifest().version;
 
 // ─── Load from Storage ──────────────────────────────────────────────
 
@@ -200,7 +204,7 @@ onMounted(() => {
   });
 
   // Live-update diagnostic log when background service worker writes new events
-  chrome.storage.onChanged.addListener((changes, area) => {
+  browser.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes.diagnosticLog?.newValue) {
       hydrateDiagnostics(changes.diagnosticLog.newValue as DiagnosticEvent[]);

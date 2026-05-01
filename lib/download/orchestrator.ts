@@ -1,7 +1,7 @@
 import type { DownloadSettings, SiteRule, FilterContext } from '@/shared/types';
 import type { DiagnosticInput } from '@/lib/storage/diagnostic-log';
 import { evaluateFilterPipeline, createFilterPipeline } from './filter';
-import { extractFilenameFromUrl } from '@/shared/url';
+import { decodeMimeEncodedWords, extractFilenameFromUrl } from '@/shared/url';
 import type { DesktopApiClient } from '@/lib/api/desktop-client';
 
 // ─── Dependency Interface ───────────────────────────────
@@ -77,7 +77,7 @@ function extensionOf(filename: string): string {
 }
 
 function resolveFilenameHint(url: string, filename: string): string | undefined {
-  const trimmed = filename.trim();
+  const trimmed = decodeMimeEncodedWords(filename).trim();
   if (!trimmed) return undefined;
   if (GENERIC_FILENAME_HINTS.has(trimmed.toLowerCase())) return undefined;
   const urlFilename = extractFilenameFromUrl(url);

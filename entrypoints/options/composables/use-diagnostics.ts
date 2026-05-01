@@ -9,7 +9,14 @@ import { ref } from 'vue';
 import type { StorageService } from '@/lib/storage';
 import type { DiagnosticEvent } from '@/shared/types';
 
-export function useDiagnostics(storageService: StorageService) {
+export interface DiagnosticsRuntime {
+  getManifest?: () => {
+    version?: string;
+    manifest_version?: number;
+  };
+}
+
+export function useDiagnostics(storageService: StorageService, runtime: DiagnosticsRuntime = {}) {
   const diagnosticEvents = ref<DiagnosticEvent[]>([]);
 
   function hydrate(events: DiagnosticEvent[]): void {
@@ -30,11 +37,13 @@ export function useDiagnostics(storageService: StorageService) {
   async function exportDiagnosticReport(): Promise<void> {
     const { storage: data } = await storageService.load();
 
+    const manifest = runtime.getManifest?.() ?? {};
+
     const report = {
       exportedAt: new Date().toISOString(),
       extension: {
-        version: chrome.runtime.getManifest().version,
-        manifestVersion: chrome.runtime.getManifest().manifest_version,
+        version: manifest.version ?? 'unknown',
+        manifestVersion: manifest.manifest_version ?? 3,
       },
       browser: {
         userAgent: navigator.userAgent,
@@ -49,7 +58,7 @@ export function useDiagnostics(storageService: StorageService) {
       diagnosticLog: data.diagnosticLog,
     };
 
-    // Use a data URI instead of blob URL to bypass chrome.downloads.
+    // Use a data URI instead of blob URL to bypass browser.downloads.
     // Blob URL downloads fire onCreated → wake Service Worker → SW logs
     // fresh startup entries → storage.onChanged replaces the UI log with
     // new timestamps, making the original entries disappear.

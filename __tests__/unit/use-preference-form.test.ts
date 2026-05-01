@@ -22,6 +22,10 @@ interface TestForm {
   enabled: boolean;
 }
 
+interface FormWithDate {
+  generatedAt: Date;
+}
+
 function createDefaults(): TestForm {
   return { port: 16800, secret: 'abc', enabled: true };
 }
@@ -257,5 +261,19 @@ describe('usePreferenceForm', () => {
     form.value.port = 1234;
     await nextTick();
     expect(isDirty.value).toBe(true);
+  });
+
+  it('tracks Date values without converting them to strings', async () => {
+    const result = usePreferenceForm<FormWithDate>({
+      buildForm: () => ({ generatedAt: new Date('2026-01-01T00:00:00.000Z') }),
+      persist: vi.fn(async () => {}),
+    });
+
+    expect(result.isDirty.value).toBe(false);
+
+    result.form.value.generatedAt = new Date('2026-01-02T00:00:00.000Z');
+    await nextTick();
+
+    expect(result.isDirty.value).toBe(true);
   });
 });

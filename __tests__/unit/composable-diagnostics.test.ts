@@ -91,14 +91,11 @@ describe('useDiagnostics', () => {
         click: clickFn,
       }),
     });
-    vi.stubGlobal('chrome', {
-      runtime: {
-        getManifest: () => ({ version: '1.0.1', manifest_version: 3 }),
-      },
-    });
     vi.stubGlobal('navigator', { userAgent: 'TestAgent', language: 'en-US' });
 
-    const { hydrate, exportDiagnosticReport } = useDiagnostics(storage);
+    const { hydrate, exportDiagnosticReport } = useDiagnostics(storage, {
+      getManifest: () => ({ version: '1.0.1', manifest_version: 3 }),
+    });
     hydrate([createEvent({ id: 'e1' })]);
 
     await exportDiagnosticReport();

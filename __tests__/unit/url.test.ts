@@ -65,6 +65,24 @@ describe('extractFilenameFromUrl', () => {
     expect(extractFilenameFromUrl(url)).toBe('无常.xmgic');
   });
 
+  it('extracts filename from RFC 2047 base64 encoded-word Content-Disposition', () => {
+    const cdValue = 'attachment; filename="=?UTF-8?B?0JjRgtC+0LPQuF8yMDI2LmRvY3g=?="';
+    const url =
+      'https://cdn.example.com/hash?' +
+      'response-content-disposition=' +
+      encodeURIComponent(cdValue);
+    expect(extractFilenameFromUrl(url)).toBe('Итоги_2026.docx');
+  });
+
+  it('extracts filename from RFC 2047 quoted-printable encoded-word Content-Disposition', () => {
+    const cdValue = 'attachment; filename="=?UTF-8?Q?=E6=8A=A5=E5=91=8A.pdf?="';
+    const url =
+      'https://cdn.example.com/hash?' +
+      'response-content-disposition=' +
+      encodeURIComponent(cdValue);
+    expect(extractFilenameFromUrl(url)).toBe('报告.pdf');
+  });
+
   it('prefers filename* over filename when both present', () => {
     const cdValue =
       'attachment; filename="fallback.txt"; filename*=UTF-8\'\'%E4%B8%AD%E6%96%87.txt';

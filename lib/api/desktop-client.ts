@@ -12,6 +12,12 @@
  * - `POST /pause-all`  — pause all active downloads (auth required)
  * - `POST /resume-all` — resume all paused downloads (auth required)
  */
+import ky, { HTTPError, TimeoutError, type KyInstance, type Options as KyOptions } from 'ky';
+import { z } from 'zod';
+import { API_MAX_RETRIES, API_TIMEOUT_MS } from '@/shared/constants';
+import { ApiAuthError, ApiError, ApiTimeoutError, ApiUnreachableError } from '@/shared/errors';
+
+z.config({ jitless: true });
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -52,13 +58,50 @@ export interface AddDownloadResponse {
   message?: string;
 }
 
+// ── Runtime Schemas ───────────────────────────────────────────
+
+const PingResponseSchema = z
+  .object({
+    status: z.string(),
+    version: z.string(),
+  })
+  .strict();
+
+const StatResponseSchema = z
+  .object({
+    downloadSpeed: z.string(),
+    uploadSpeed: z.string(),
+    numActive: z.string(),
+    numWaiting: z.string(),
+    numStopped: z.string(),
+    numStoppedTotal: z.string(),
+  })
+  .strict();
+
+const ActionResponseSchema = z
+  .object({
+    status: z.string(),
+    error: z.string().optional(),
+  })
+  .strict();
+
+const AddDownloadResponseSchema = z
+  .object({
+    action: z.string(),
+    gid: z.string().optional(),
+    message: z.string().optional(),
+  })
+  .strict();
+
 // ── Client ───────────────────────────────────────────────────
 
 export class DesktopApiClient {
   private config: DesktopApiConfig;
+  private http: KyInstance;
 
   constructor(config: DesktopApiConfig) {
     this.config = { ...config };
+    this.http = this.createHttpClient();
   }
 
   /** Current base URL derived from the configured port. */
@@ -69,6 +112,7 @@ export class DesktopApiClient {
   /** Update config at runtime (e.g. when user changes port in settings). */
   updateConfig(config: DesktopApiConfig): void {
     this.config = { ...config };
+    this.http = this.createHttpClient();
   }
 
   /**
@@ -82,16 +126,71 @@ export class DesktopApiClient {
     return {};
   }
 
+  private createHttpClient(): KyInstance {
+    return ky.create({
+      prefix: this.baseUrl,
+      timeout: API_TIMEOUT_MS,
+      retry: {
+        limit: API_MAX_RETRIES,
+        methods: ['get', 'post'],
+      },
+    });
+  }
+
+  private async parseJson<T>(
+    path: string,
+    schema: z.ZodType<T>,
+    options: KyOptions,
+    label: string,
+  ): Promise<T> {
+    try {
+      const payload = await this.http(path, options).json<unknown>();
+      return schema.parse(payload);
+    } catch (error) {
+      throw await this.normalizeError(error, label);
+    }
+  }
+
+  private async normalizeError(error: unknown, label: string): Promise<unknown> {
+    if (error instanceof HTTPError) {
+      const status = error.response.status;
+      const detail = await this.readErrorDetail(error.response);
+      if (status === 401) {
+        return new ApiAuthError(error);
+      }
+      return new ApiError(`${label} failed: HTTP ${status}${detail}`, status, error);
+    }
+
+    if (error instanceof TimeoutError) {
+      return new ApiTimeoutError(API_TIMEOUT_MS);
+    }
+
+    if (error instanceof Error && error.message.includes('network error')) {
+      return new ApiUnreachableError(error);
+    }
+
+    if (error instanceof TypeError) {
+      return new ApiUnreachableError(error);
+    }
+
+    return error;
+  }
+
+  private async readErrorDetail(response: Response): Promise<string> {
+    try {
+      const body = await response.text();
+      return body ? ` — ${body.slice(0, 200)}` : '';
+    } catch {
+      return '';
+    }
+  }
+
   /**
    * Heartbeat check — no authentication required.
    * @throws on network error or non-200 response.
    */
   async ping(): Promise<PingResponse> {
-    const res = await fetch(`${this.baseUrl}/ping`);
-    if (!res.ok) {
-      throw new Error(`Ping failed: HTTP ${res.status}`);
-    }
-    return res.json() as Promise<PingResponse>;
+    return this.parseJson('ping', PingResponseSchema, {}, 'Ping');
   }
 
   /**
@@ -100,13 +199,15 @@ export class DesktopApiClient {
    * @throws on network error, auth failure, or non-200 response.
    */
   async getStat(): Promise<StatResponse> {
-    const res = await fetch(`${this.baseUrl}/stat`, {
-      headers: this.authHeaders(),
-    });
-    if (!res.ok) {
-      throw new Error(`Get stat failed: HTTP ${res.status}`);
-    }
-    return res.json() as Promise<StatResponse>;
+    return this.parseJson(
+      'stat',
+      StatResponseSchema,
+      {
+        method: 'GET',
+        headers: this.authHeaders(),
+      },
+      'Get stat',
+    );
   }
 
   /**
@@ -115,28 +216,16 @@ export class DesktopApiClient {
    * @throws on network error, auth failure, or non-200 response.
    */
   async addDownload(request: AddDownloadRequest): Promise<AddDownloadResponse> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...this.authHeaders(),
-    };
-
-    const res = await fetch(`${this.baseUrl}/add`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(request),
-    });
-
-    if (!res.ok) {
-      let detail = '';
-      try {
-        const body = await res.text();
-        if (body) detail = ` — ${body.slice(0, 200)}`;
-      } catch {
-        /* ignore body read failure */
-      }
-      throw new Error(`Add download failed: HTTP ${res.status}${detail}`);
-    }
-    return res.json() as Promise<AddDownloadResponse>;
+    return this.parseJson(
+      'add',
+      AddDownloadResponseSchema,
+      {
+        method: 'POST',
+        headers: this.authHeaders(),
+        json: request,
+      },
+      'Add download',
+    );
   }
 
   /**
@@ -145,14 +234,15 @@ export class DesktopApiClient {
    * @throws on network error or non-200 response.
    */
   async pauseAll(): Promise<ActionResponse> {
-    const res = await fetch(`${this.baseUrl}/pause-all`, {
-      method: 'POST',
-      headers: this.authHeaders(),
-    });
-    if (!res.ok) {
-      throw new Error(`Pause all failed: HTTP ${res.status}`);
-    }
-    return res.json() as Promise<ActionResponse>;
+    return this.parseJson(
+      'pause-all',
+      ActionResponseSchema,
+      {
+        method: 'POST',
+        headers: this.authHeaders(),
+      },
+      'Pause all',
+    );
   }
 
   /**
@@ -161,14 +251,15 @@ export class DesktopApiClient {
    * @throws on network error or non-200 response.
    */
   async resumeAll(): Promise<ActionResponse> {
-    const res = await fetch(`${this.baseUrl}/resume-all`, {
-      method: 'POST',
-      headers: this.authHeaders(),
-    });
-    if (!res.ok) {
-      throw new Error(`Resume all failed: HTTP ${res.status}`);
-    }
-    return res.json() as Promise<ActionResponse>;
+    return this.parseJson(
+      'resume-all',
+      ActionResponseSchema,
+      {
+        method: 'POST',
+        headers: this.authHeaders(),
+      },
+      'Resume all',
+    );
   }
 
   /**

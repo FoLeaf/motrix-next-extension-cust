@@ -8,6 +8,8 @@
  * check, task polling) is preserved unchanged from the original.
  */
 import { ref, provide, onMounted, onUnmounted } from 'vue';
+import { browser } from 'wxt/browser';
+import { storage as wxtStorage } from '#imports';
 import { usePolling } from '@/shared/use-polling';
 import { NConfigProvider, NSpin, NIcon, NButton } from 'naive-ui';
 import { PauseOutline, PlayOutline, RocketOutline, AlertCircleOutline } from '@vicons/ionicons5';
@@ -16,7 +18,7 @@ import { ConnectionService, ConnectionStatus } from '@/lib/services';
 import { buildProtocolUrl, ProtocolAction } from '@/lib/protocol';
 import { resolveThemeClass } from '@/lib/services';
 import type { ThemePreference } from '@/lib/services';
-import { StorageService } from '@/lib/storage';
+import { StorageService, createWxtStorageApi } from '@/lib/storage';
 import type { StatResponse } from '@/lib/api/desktop-client';
 import { DEFAULT_CONNECTION_CONFIG, DEFAULT_UI_PREFS } from '@/shared/constants';
 import { useTheme } from '@/shared/use-theme';
@@ -28,7 +30,7 @@ import StatDashboard from './components/StatDashboard.vue';
 
 // ─── i18n ───────────────────────────────────────────────────────────
 
-const i18nCtx = createI18n();
+const i18nCtx = createI18n('auto', { localeApi: browser.i18n });
 provide(I18N_KEY, i18nCtx);
 const { t: i18n, tSub: i18nSub, effectiveLocale } = i18nCtx;
 const { naiveLocale, naiveDateLocale } = useNaiveLocale(effectiveLocale);
@@ -93,7 +95,7 @@ async function resumeAll(): Promise<void> {
 }
 
 function openSettings(): void {
-  void chrome.runtime.openOptionsPage();
+  void browser.runtime.openOptionsPage();
 }
 
 function launchApp(): void {
@@ -104,13 +106,13 @@ function launchApp(): void {
       : buildProtocolUrl();
   // Let Chrome handle the protocol tab lifecycle naturally —
   // the OS will process the custom scheme and Chrome manages the tab.
-  void chrome.tabs.create({ url, active: true });
+  void browser.tabs.create({ url, active: true });
 }
 
 /**
  * Toggle download interception on/off. Performs a read-modify-write to
  * preserve all other DownloadSettings fields. The background service
- * worker picks up the change automatically via chrome.storage.onChanged.
+ * worker picks up the change automatically via browser.storage.onChanged.
  */
 async function toggleEnabled(): Promise<void> {
   enabled.value = !enabled.value;
@@ -129,7 +131,7 @@ async function toggleEnabled(): Promise<void> {
 // ─── Lifecycle ──────────────────────────────────────────────────────
 
 onMounted(async () => {
-  storageService = new StorageService(chrome.storage.local);
+  storageService = new StorageService(createWxtStorageApi(wxtStorage));
   const { storage: data } = await storageService.load();
 
   // Hydrate interception toggle state

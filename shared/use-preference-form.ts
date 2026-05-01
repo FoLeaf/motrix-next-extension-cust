@@ -13,34 +13,12 @@
  *
  * @see /motrix-next/src/composables/usePreferenceForm.ts (desktop reference)
  */
-import { ref, computed, type Ref } from 'vue';
-
-// ── Deep equality (avoids lodash dependency) ────────────────────────
-
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a == null || b == null) return false;
-  if (typeof a !== typeof b) return false;
-
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false;
-    return a.every((v, i) => deepEqual(v, (b as unknown[])[i]));
-  }
-
-  if (typeof a === 'object') {
-    const keysA = Object.keys(a as Record<string, unknown>);
-    const keysB = Object.keys(b as Record<string, unknown>);
-    if (keysA.length !== keysB.length) return false;
-    return keysA.every((k) =>
-      deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
-    );
-  }
-
-  return false;
-}
+import { ref, shallowRef, computed, type Ref } from 'vue';
+import deepEqual from 'fast-deep-equal/es6';
+import { klona } from 'klona';
 
 function snapshot<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+  return klona(value);
 }
 
 // ── Public API ──────────────────────────────────────────────────────
@@ -80,7 +58,7 @@ export interface UsePreferenceFormReturn<T> {
    * Computed flag: `true` when the form has diverged from the saved
    * snapshot. Drives the action bar's dirty styling.
    *
-   * Uses JSON snapshot + deep equality (same as desktop `isEqual`).
+   * Uses structured snapshots plus deep equality.
    */
   isDirty: Ref<boolean>;
 
@@ -124,7 +102,7 @@ export function usePreferenceForm<T extends object>(
   // ── Reactive State ──────────────────────────────────────────────
 
   const form: Ref<T> = ref(options.buildForm()) as Ref<T>;
-  const savedSnapshot: Ref<T> = ref(snapshot(options.buildForm())) as Ref<T>;
+  const savedSnapshot: Ref<T> = shallowRef(snapshot(options.buildForm())) as Ref<T>;
 
   // Ref: desktop usePreferenceForm.ts L65
   const isDirty = computed(() => !deepEqual(snapshot(form.value), savedSnapshot.value));

@@ -437,6 +437,31 @@ describe('DownloadOrchestrator', () => {
       });
     });
 
+    it('decodes RFC 2047 encoded-word filename before forwarding to HTTP API', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockResolvedValue({ action: 'queued' });
+      const apiDeps = createMockDeps({ desktopClient, openProtocolNewTask: undefined });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          url: 'https://cdn.example.com/hash',
+          finalUrl: 'https://cdn.example.com/hash',
+          filename: '=?UTF-8?B?0JjRgtC+0LPQuF8yMDI2LmRvY3g=?=',
+          mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        }),
+      );
+
+      expect(addDownload).toHaveBeenCalledWith({
+        url: 'https://cdn.example.com/hash',
+        referer: 'https://example.com/page',
+        cookie: undefined,
+        filename: 'Итоги_2026.docx',
+      });
+    });
+
     it('includes hasCookie: true in diagnostic context when cookies are collected', async () => {
       const cookieDeps = createMockDeps({
         cookies: {

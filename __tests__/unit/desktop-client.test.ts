@@ -13,6 +13,16 @@ import {
   type PingResponse,
 } from '@/lib/api/desktop-client';
 
+function firstRequest(): Request {
+  const [input] = vi.mocked(fetch).mock.calls[0]!;
+  expect(input).toBeInstanceOf(Request);
+  return input as Request;
+}
+
+async function readJsonBody(request: Request): Promise<unknown> {
+  return JSON.parse(await request.clone().text());
+}
+
 describe('DesktopApiClient', () => {
   const defaultConfig: DesktopApiConfig = {
     port: 16801,
@@ -61,21 +71,29 @@ describe('DesktopApiClient', () => {
       );
 
       await client.ping();
-      const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-      expect(url).toBe('http://127.0.0.1:16801/ping');
-      // GET /ping uses bare fetch(url) — no init object at all
-      expect(init).toBeUndefined();
+      const request = firstRequest();
+      expect(request.url).toBe('http://127.0.0.1:16801/ping');
+      expect(request.method).toBe('GET');
+      expect(request.headers.get('authorization')).toBeNull();
     });
 
     it('throws on network error', async () => {
-      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('fetch failed'));
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'));
 
-      await expect(client.ping()).rejects.toThrow('fetch failed');
+      await expect(client.ping()).rejects.toThrow('Cannot connect to Motrix Next API');
     });
 
     it('throws on non-200 response', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
         new Response('Internal Server Error', { status: 500 }),
+      );
+
+      await expect(client.ping()).rejects.toThrow();
+    });
+
+    it('rejects malformed ping responses before returning them to callers', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: 'ok' }), { status: 200 }),
       );
 
       await expect(client.ping()).rejects.toThrow();
@@ -108,12 +126,12 @@ describe('DesktopApiClient', () => {
       );
 
       await client.addDownload(request);
-      const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-      expect(url).toBe('http://127.0.0.1:16801/add');
-      expect(init?.method).toBe('POST');
-      expect((init?.headers as Record<string, string>)['Content-Type']).toBe('application/json');
-      expect((init?.headers as Record<string, string>)['Authorization']).toBe('Bearer test-secret');
-      expect(JSON.parse(init?.body as string)).toEqual(request);
+      const sent = firstRequest();
+      expect(sent.url).toBe('http://127.0.0.1:16801/add');
+      expect(sent.method).toBe('POST');
+      expect(sent.headers.get('content-type')).toBe('application/json');
+      expect(sent.headers.get('authorization')).toBe('Bearer test-secret');
+      await expect(readJsonBody(sent)).resolves.toEqual(request);
     });
 
     it('omits Authorization header when secret is empty', async () => {
@@ -123,8 +141,7 @@ describe('DesktopApiClient', () => {
       );
 
       await noAuthClient.addDownload(request);
-      const [, init] = vi.mocked(fetch).mock.calls[0]!;
-      expect((init?.headers as Record<string, string>)['Authorization']).toBeUndefined();
+      expect(firstRequest().headers.get('authorization')).toBeNull();
     });
 
     it('sends minimal request (url only)', async () => {
@@ -133,8 +150,7 @@ describe('DesktopApiClient', () => {
       );
 
       await client.addDownload({ url: 'https://example.com/file.zip' });
-      const [, init] = vi.mocked(fetch).mock.calls[0]!;
-      const body = JSON.parse(init?.body as string);
+      const body = (await readJsonBody(firstRequest())) as { url?: string };
       expect(body.url).toBe('https://example.com/file.zip');
     });
 
@@ -146,10 +162,20 @@ describe('DesktopApiClient', () => {
       await expect(client.addDownload(request)).rejects.toThrow(/401|Unauthorized/i);
     });
 
-    it('throws on network failure', async () => {
-      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    it('rejects malformed add-download responses before returning them to callers', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ gid: 'abc123' }), { status: 200 }),
+      );
 
-      await expect(client.addDownload(request)).rejects.toThrow('Failed to fetch');
+      await expect(client.addDownload(request)).rejects.toThrow();
+    });
+
+    it('throws on network failure', async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+
+      await expect(client.addDownload(request)).rejects.toThrow(
+        'Cannot connect to Motrix Next API',
+      );
     });
   });
 
@@ -189,10 +215,10 @@ describe('DesktopApiClient', () => {
       );
 
       await client.getStat();
-      const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-      expect(url).toBe('http://127.0.0.1:16801/stat');
-      expect(init?.method).toBeUndefined(); // GET doesn't need explicit method
-      expect((init?.headers as Record<string, string>)['Authorization']).toBe('Bearer test-secret');
+      const request = firstRequest();
+      expect(request.url).toBe('http://127.0.0.1:16801/stat');
+      expect(request.method).toBe('GET');
+      expect(request.headers.get('authorization')).toBe('Bearer test-secret');
     });
 
     it('omits Authorization when secret is empty', async () => {
@@ -212,12 +238,11 @@ describe('DesktopApiClient', () => {
       );
 
       await noAuthClient.getStat();
-      const [, init] = vi.mocked(fetch).mock.calls[0]!;
-      expect((init?.headers as Record<string, string>)?.['Authorization']).toBeUndefined();
+      expect(firstRequest().headers.get('authorization')).toBeNull();
     });
 
     it('throws on non-200 response', async () => {
-      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
         new Response('Internal Server Error', { status: 500 }),
       );
 
@@ -230,6 +255,14 @@ describe('DesktopApiClient', () => {
       );
 
       await expect(client.getStat()).rejects.toThrow(/401|Unauthorized/i);
+    });
+
+    it('rejects malformed stat responses before returning them to callers', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ downloadSpeed: '1' }), { status: 200 }),
+      );
+
+      await expect(client.getStat()).rejects.toThrow();
     });
   });
 
@@ -244,10 +277,10 @@ describe('DesktopApiClient', () => {
       const result = await client.pauseAll();
       expect(result.status).toBe('ok');
 
-      const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-      expect(url).toBe('http://127.0.0.1:16801/pause-all');
-      expect(init?.method).toBe('POST');
-      expect((init?.headers as Record<string, string>)['Authorization']).toBe('Bearer test-secret');
+      const request = firstRequest();
+      expect(request.url).toBe('http://127.0.0.1:16801/pause-all');
+      expect(request.method).toBe('POST');
+      expect(request.headers.get('authorization')).toBe('Bearer test-secret');
     });
 
     it('returns error response when engine is not running', async () => {
@@ -262,9 +295,9 @@ describe('DesktopApiClient', () => {
     });
 
     it('throws on network failure', async () => {
-      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
 
-      await expect(client.pauseAll()).rejects.toThrow('Failed to fetch');
+      await expect(client.pauseAll()).rejects.toThrow('Cannot connect to Motrix Next API');
     });
   });
 
@@ -279,10 +312,10 @@ describe('DesktopApiClient', () => {
       const result = await client.resumeAll();
       expect(result.status).toBe('ok');
 
-      const [url, init] = vi.mocked(fetch).mock.calls[0]!;
-      expect(url).toBe('http://127.0.0.1:16801/resume-all');
-      expect(init?.method).toBe('POST');
-      expect((init?.headers as Record<string, string>)['Authorization']).toBe('Bearer test-secret');
+      const request = firstRequest();
+      expect(request.url).toBe('http://127.0.0.1:16801/resume-all');
+      expect(request.method).toBe('POST');
+      expect(request.headers.get('authorization')).toBe('Bearer test-secret');
     });
 
     it('returns error response when engine is not running', async () => {
@@ -297,9 +330,9 @@ describe('DesktopApiClient', () => {
     });
 
     it('throws on network failure', async () => {
-      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
 
-      await expect(client.resumeAll()).rejects.toThrow('Failed to fetch');
+      await expect(client.resumeAll()).rejects.toThrow('Cannot connect to Motrix Next API');
     });
   });
 });

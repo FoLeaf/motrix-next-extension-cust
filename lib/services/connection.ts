@@ -1,4 +1,5 @@
 import type { PingResponse, StatResponse } from '@/lib/api/desktop-client';
+import { ApiAuthError, ApiTimeoutError, ApiUnreachableError } from '@/shared/errors';
 
 export enum ConnectionStatus {
   Connected = 'connected',
@@ -22,20 +23,6 @@ export interface ConnectionResult {
 interface ApiClient {
   ping: () => Promise<PingResponse>;
   getStat: () => Promise<StatResponse>;
-}
-
-// ── Typed Error Classes ──────────────────────────────────
-
-class ApiUnreachableError extends Error {
-  override name = 'ApiUnreachableError';
-}
-
-class ApiAuthError extends Error {
-  override name = 'ApiAuthError';
-}
-
-class ApiTimeoutError extends Error {
-  override name = 'ApiTimeoutError';
 }
 
 /**
@@ -66,12 +53,12 @@ export class ConnectionService {
       try {
         await this.client.getStat();
       } catch (authError) {
-        // Distinguish 401 auth failures from other errors
-        if (authError instanceof Error && authError.message.includes('401')) {
+        const classified = this.classifyError(authError);
+        if (classified === 'ApiAuthError') {
           return {
             status: ConnectionStatus.Disconnected,
             version: ping.version,
-            error: 'ApiAuthError',
+            error: classified,
           };
         }
         // Non-401 errors during getStat are still auth-related failures
