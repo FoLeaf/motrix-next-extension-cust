@@ -113,7 +113,17 @@ function buildForm(): SettingsForm {
   };
 }
 
-const { message: toast } = createDiscreteApi(['message']);
+const discreteConfigProviderProps = computed(() => ({
+  theme: naiveTheme.value,
+  themeOverrides: themeOverrides.value,
+  locale: naiveLocale.value,
+  dateLocale: naiveDateLocale.value,
+  inlineThemeDisabled: true,
+}));
+
+const { message: toast } = createDiscreteApi(['message'], {
+  configProviderProps: discreteConfigProviderProps,
+});
 
 const {
   form,
