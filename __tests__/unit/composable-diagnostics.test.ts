@@ -65,7 +65,6 @@ describe('useDiagnostics', () => {
         connection: { port: 16801, secret: 'my-secret' },
         settings: {
           enabled: true,
-          minFileSize: 0,
           hideDownloadBar: false,
           autoLaunchApp: true,
           forwardCookies: false,

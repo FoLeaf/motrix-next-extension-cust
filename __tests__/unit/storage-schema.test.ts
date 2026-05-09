@@ -63,7 +63,6 @@ describe('parseDownloadSettings', () => {
   it('returns valid settings unchanged', () => {
     const input = {
       enabled: false,
-      minFileSize: 10,
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,
@@ -76,7 +75,6 @@ describe('parseDownloadSettings', () => {
     const result = parseDownloadSettings({});
     expect(result).toEqual({
       enabled: true,
-      minFileSize: 0,
       hideDownloadBar: false,
       autoLaunchApp: true,
       forwardCookies: true,
@@ -87,7 +85,6 @@ describe('parseDownloadSettings', () => {
     const result = parseDownloadSettings(undefined);
     expect(result).toEqual({
       enabled: true,
-      minFileSize: 0,
       hideDownloadBar: false,
       autoLaunchApp: true,
       forwardCookies: true,
@@ -99,11 +96,6 @@ describe('parseDownloadSettings', () => {
     expect(result.enabled).toBe(true);
   });
 
-  it('replaces negative minFileSize with default', () => {
-    const result = parseDownloadSettings({ minFileSize: -5 });
-    expect(result.minFileSize).toBe(0);
-  });
-
   it('strips extra fields', () => {
     const result = parseDownloadSettings({ enabled: true, unknown: 42 });
     expect(result).not.toHaveProperty('unknown');
@@ -112,7 +104,6 @@ describe('parseDownloadSettings', () => {
   it('preserves valid sibling fields when one setting is corrupt', () => {
     const result = parseDownloadSettings({
       enabled: false,
-      minFileSize: -5,
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,
@@ -121,7 +112,6 @@ describe('parseDownloadSettings', () => {
 
     expect(result).toEqual({
       enabled: false,
-      minFileSize: 0,
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,
@@ -350,7 +340,6 @@ describe('parseStorage', () => {
     expect(result.connection).toEqual({ port: 16801, secret: '' });
     expect(result.settings).toEqual({
       enabled: true,
-      minFileSize: 0,
       hideDownloadBar: false,
       autoLaunchApp: true,
       forwardCookies: true,
@@ -374,7 +363,12 @@ describe('parseStorage', () => {
     expect(result.connection.port).toBe(9000);
     expect(result.connection.secret).toBe(''); // defaulted
     expect(result.settings.enabled).toBe(false);
-    expect(result.settings.minFileSize).toBe(0); // defaulted
+    expect(result.settings).toEqual({
+      enabled: false,
+      hideDownloadBar: false,
+      autoLaunchApp: true,
+      forwardCookies: true,
+    });
   });
 
   it('strips unknown fields without discarding valid stored values', () => {
@@ -382,7 +376,6 @@ describe('parseStorage', () => {
       connection: { port: 16802, secret: 'token', extra: true },
       settings: {
         enabled: false,
-        minFileSize: 25,
         hideDownloadBar: true,
         autoLaunchApp: false,
         forwardCookies: true,
@@ -394,7 +387,6 @@ describe('parseStorage', () => {
     expect(result.connection).toEqual({ port: 16802, secret: 'token' });
     expect(result.settings).toEqual({
       enabled: false,
-      minFileSize: 25,
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,

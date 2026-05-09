@@ -93,14 +93,6 @@
     "message": "브라우저 다운로드를 자동으로 가로챕니다",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "최소 파일 크기 (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "이 기준보다 작은 파일 건너뛰기",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "알림",
     "description": "Toggle label for enabling notifications"

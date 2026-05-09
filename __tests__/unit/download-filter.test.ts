@@ -5,7 +5,6 @@ import {
   EnabledStage,
   SelfTriggerStage,
   SchemeStage,
-  FileSizeStage,
   SiteRuleStage,
   MimeTypeStage,
 } from '@/lib/download/filter';
@@ -15,7 +14,6 @@ import type { FilterContext, DownloadSettings, SiteRule } from '@/shared/types';
 
 const DEFAULT_SETTINGS: DownloadSettings = {
   enabled: true,
-  minFileSize: 0,
   hideDownloadBar: false,
   autoLaunchApp: true,
   forwardCookies: false,
@@ -100,41 +98,6 @@ describe('SchemeStage', () => {
   it('returns skip for chrome-extension URLs', () => {
     const ctx = createContext({ url: 'chrome-extension://abc/file.zip' });
     expect(stage.evaluate(ctx, DEFAULT_SETTINGS)).toBe('skip');
-  });
-});
-
-// ─── File Size Stage ────────────────────────────────────
-
-describe('FileSizeStage', () => {
-  const stage = new FileSizeStage();
-
-  it('returns null when minFileSize is 0 (no limit)', () => {
-    const result = stage.evaluate(createContext({ fileSize: 100 }), DEFAULT_SETTINGS);
-    expect(result).toBeNull();
-  });
-
-  it('returns null when file size is unknown (-1)', () => {
-    const settings = { ...DEFAULT_SETTINGS, minFileSize: 5 };
-    const result = stage.evaluate(createContext({ fileSize: -1 }), settings);
-    expect(result).toBeNull();
-  });
-
-  it('returns null when file exceeds minimum size', () => {
-    const settings = { ...DEFAULT_SETTINGS, minFileSize: 5 }; // 5 MB
-    const ctx = createContext({ fileSize: 10 * 1024 * 1024 }); // 10 MB
-    expect(stage.evaluate(ctx, settings)).toBeNull();
-  });
-
-  it('returns skip when file is smaller than minimum size', () => {
-    const settings = { ...DEFAULT_SETTINGS, minFileSize: 5 }; // 5 MB
-    const ctx = createContext({ fileSize: 1 * 1024 * 1024 }); // 1 MB
-    expect(stage.evaluate(ctx, settings)).toBe('skip');
-  });
-
-  it('returns null when file equals minimum size exactly', () => {
-    const settings = { ...DEFAULT_SETTINGS, minFileSize: 5 };
-    const ctx = createContext({ fileSize: 5 * 1024 * 1024 });
-    expect(stage.evaluate(ctx, settings)).toBeNull();
   });
 });
 
@@ -392,15 +355,15 @@ describe('evaluateFilterPipeline', () => {
     expect(result.stageName).toBe('scheme');
   });
 
-  it('returns skip with "file-size" stageName when file is too small', () => {
+  it('intercepts small files because size-based filtering was removed', () => {
     const stages = createFilterPipeline(() => []);
     const result = evaluateFilterPipeline(
       createContext({ fileSize: 512 }), // 512 bytes
-      { ...DEFAULT_SETTINGS, minFileSize: 1 }, // min 1 MB
+      DEFAULT_SETTINGS,
       stages,
     );
-    expect(result.verdict).toBe('skip');
-    expect(result.stageName).toBe('file-size');
+    expect(result.verdict).toBe('intercept');
+    expect(result.stageName).toBeNull();
   });
 
   it('returns skip with "site-rule" stageName when rule says always-skip', () => {
@@ -415,15 +378,14 @@ describe('evaluateFilterPipeline', () => {
     expect(result.stageName).toBe('site-rule');
   });
 
-  it('returns intercept with "site-rule" stageName when rule says always-intercept even with small file', () => {
+  it('returns intercept with "site-rule" stageName when rule says always-intercept', () => {
     const rules: SiteRule[] = [{ id: '1', pattern: 'example.com', action: 'always-intercept' }];
     const stages = createFilterPipeline(() => rules);
     const result = evaluateFilterPipeline(
       createContext({ tabUrl: 'https://example.com/page', fileSize: 100 }),
-      { ...DEFAULT_SETTINGS, minFileSize: 10 },
+      DEFAULT_SETTINGS,
       stages,
     );
-    // Site rule (always-intercept) should override file size filter
     expect(result.verdict).toBe('intercept');
     expect(result.stageName).toBe('site-rule');
   });

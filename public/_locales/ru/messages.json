@@ -93,14 +93,6 @@
     "message": "Автоматически перехватывать загрузки браузера",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Минимальный размер файла (МБ)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Пропускать файлы меньше этого порога",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Уведомления",
     "description": "Toggle label for enabling notifications"

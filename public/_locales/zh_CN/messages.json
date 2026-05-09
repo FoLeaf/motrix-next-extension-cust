@@ -93,14 +93,6 @@
     "message": "自动拦截浏览器下载任务",
     "description": "拦截开关的说明文本"
   },
-  "options_min_size_label": {
-    "message": "最小文件大小 (MB)",
-    "description": "最小文件大小过滤器标签"
-  },
-  "options_min_size_desc": {
-    "message": "跳过小于此阈值的文件",
-    "description": "最小文件大小输入的说明文本"
-  },
   "options_notify_label": {
     "message": "通知",
     "description": "启用通知的开关"

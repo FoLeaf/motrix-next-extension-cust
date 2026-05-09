@@ -93,14 +93,6 @@
     "message": "Tarayıcı indirmelerini otomatik olarak yakala",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Minimum dosya boyutu (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Bu eşikten küçük dosyaları atla",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Bildirimler",
     "description": "Toggle label for enabling notifications"

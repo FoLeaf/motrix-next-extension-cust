@@ -93,14 +93,6 @@
     "message": "Αυτόματη υποκλοπή λήψεων του προγράμματος περιήγησης",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Ελάχιστο μέγεθος αρχείου (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Παράλειψη αρχείων μικρότερων από αυτό το όριο",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Ειδοποιήσεις",
     "description": "Toggle label for enabling notifications"

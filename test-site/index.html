@@ -563,21 +563,6 @@
             <div class="card__bar card__bar--error"></div>
             <div class="card__body">
               <div class="card__row">
-                <span class="card__name">Small file (&lt; 1 KB)</span>
-                <span class="badge-skip">SHOULD SKIP</span>
-              </div>
-              <div class="card__desc">
-                Below minFileSize threshold — browser should handle natively
-              </div>
-            </div>
-            <div class="card__actions">
-              <button class="btn btn--ghost" id="btn-small-file">↓ Download</button>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card__bar card__bar--error"></div>
-            <div class="card__body">
-              <div class="card__row">
                 <span class="card__name">Blob URL</span>
                 <span class="badge-skip">SHOULD SKIP</span>
               </div>
@@ -692,18 +677,6 @@
 
     <!-- ── Edge Case Scripts ───────────────────────────────────── -->
     <script>
-      // Small file: generate a tiny text file via JS download
-      document.getElementById('btn-small-file').addEventListener('click', () => {
-        const a = document.createElement('a');
-        const blob = new Blob(['Hello Motrix Next!'], {
-          type: 'text/plain',
-        });
-        a.href = URL.createObjectURL(blob);
-        a.download = 'small-test.txt';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
-
       // Blob URL: create blob and open it
       document.getElementById('btn-blob').addEventListener('click', () => {
         const blob = new Blob([new Uint8Array(1024).fill(0x42)], {

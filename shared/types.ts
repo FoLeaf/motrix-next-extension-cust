@@ -73,7 +73,6 @@ export interface FilterStage {
 
 export interface DownloadSettings {
   enabled: boolean;
-  minFileSize: number; // MB, 0 = no limit
   hideDownloadBar: boolean;
   autoLaunchApp: boolean;
   forwardCookies: boolean;

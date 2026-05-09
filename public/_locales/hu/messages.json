@@ -93,14 +93,6 @@
     "message": "Böngésző letöltések automatikus elfogása",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Minimális fájlméret (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Az ennél kisebb fájlok kihagyása",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Értesítések",
     "description": "Toggle label for enabling notifications"

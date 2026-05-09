@@ -25,7 +25,6 @@ When a browser download is initiated and intercepted by the Extension, it reads:
 - **Download URL** — to forward to the local Motrix Next HTTP API
 - **Filename** — to display in diagnostics and pass to Motrix Next
 - **HTTP Referer** — to include with the task submission when available
-- **File size** — to apply the minimum file size filter
 
 This data is sent only to the Motrix Next HTTP API running on `127.0.0.1` (localhost) — **never to any external server**.
 
@@ -46,7 +45,7 @@ The user can disable cookie forwarding in Settings at any time.
 The Extension stores the following user-configured preferences in `chrome.storage.local`:
 
 - RPC connection settings (port number, secret token)
-- Download behavior preferences (enabled/disabled, minimum file size, auto-launch, cookie forwarding, download bar visibility)
+- Download behavior preferences (enabled/disabled, auto-launch, cookie forwarding, download bar visibility)
 - Site rules (per-domain interception settings)
 - Appearance settings (theme, color scheme, language)
 - Diagnostic event log (a local ring buffer of recent extension events for troubleshooting)

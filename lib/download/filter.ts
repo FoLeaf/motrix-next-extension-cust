@@ -52,22 +52,7 @@ export class SchemeStage implements FilterStage {
 }
 
 /**
- * Stage 4: Skip files smaller than the configured minimum size.
- * Unknown sizes (-1) pass through (intercept to be safe).
- */
-export class FileSizeStage implements FilterStage {
-  readonly name = 'file-size';
-
-  evaluate(ctx: FilterContext, config: DownloadSettings): FilterVerdict | null {
-    if (config.minFileSize <= 0) return null;
-    if (ctx.fileSize < 0) return null; // Unknown size — pass through
-    const minBytes = config.minFileSize * 1024 * 1024;
-    return ctx.fileSize >= minBytes ? null : 'skip';
-  }
-}
-
-/**
- * Stage 5: Apply per-site rules.
+ * Stage 4: Apply per-site rules.
  *
  * `SiteRuleStage` takes an additional `rules` parameter because it needs
  * external state (the rule list) that isn't part of `DownloadSettings`.
@@ -170,10 +155,7 @@ export class MimeTypeStage implements FilterStage {
  * Create the complete filter pipeline with all stages.
  *
  * Pipeline order:
- * 1. Enabled → 2. SelfTrigger → 3. Scheme → 4. SiteRule → 5. FileSize
- *
- * Site rules are evaluated BEFORE file size so that "always-intercept"
- * can override the minimum size filter.
+ * 1. Enabled → 2. SelfTrigger → 3. Scheme → 4. SiteRule → 5. MimeType
  *
  * @param getRules - Getter for current site rules (lazy evaluation)
  */
@@ -184,7 +166,6 @@ export function createFilterPipeline(getRules: () => SiteRule[]): FilterStage[] 
     new SchemeStage(),
     new SiteRuleStage(getRules),
     new MimeTypeStage(),
-    new FileSizeStage(),
   ];
 }
 

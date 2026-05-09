@@ -7,7 +7,6 @@ export const DEFAULT_CONNECTION_CONFIG: Readonly<ConnectionConfig> = {
 
 export const DEFAULT_DOWNLOAD_SETTINGS: Readonly<DownloadSettings> = {
   enabled: true,
-  minFileSize: 0,
   hideDownloadBar: false,
   autoLaunchApp: true,
   forwardCookies: true,

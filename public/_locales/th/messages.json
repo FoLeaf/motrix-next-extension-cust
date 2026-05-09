@@ -93,14 +93,6 @@
     "message": "ดักจับการดาวน์โหลดจากเบราว์เซอร์โดยอัตโนมัติ",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "ขนาดไฟล์ขั้นต่ำ (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "ข้ามไฟล์ที่เล็กกว่าเกณฑ์นี้",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "การแจ้งเตือน",
     "description": "Toggle label for enabling notifications"

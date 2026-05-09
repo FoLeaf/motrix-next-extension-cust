@@ -50,11 +50,6 @@ const DownloadSettingsSchema = z.object({
     .boolean()
     .catch(DEFAULT_DOWNLOAD_SETTINGS.enabled)
     .default(DEFAULT_DOWNLOAD_SETTINGS.enabled),
-  minFileSize: z
-    .number()
-    .min(0)
-    .catch(DEFAULT_DOWNLOAD_SETTINGS.minFileSize)
-    .default(DEFAULT_DOWNLOAD_SETTINGS.minFileSize),
   hideDownloadBar: z
     .boolean()
     .catch(DEFAULT_DOWNLOAD_SETTINGS.hideDownloadBar)

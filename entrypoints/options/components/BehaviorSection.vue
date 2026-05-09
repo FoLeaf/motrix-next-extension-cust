@@ -2,15 +2,13 @@
 /**
  * @fileoverview Download behavior settings section.
  *
- * Toggle switches and a numeric input for controlling download
- * interception behavior. Uses Naive UI NSwitch (identical component
- * to the desktop Basic.vue), NInputNumber, and NDivider.
+ * Toggle switches for controlling download interception behavior.
+ * Uses Naive UI NSwitch, matching the desktop Basic.vue controls.
  */
-import { NFormItem, NSwitch, NInputNumber, NDivider } from 'naive-ui';
+import { NFormItem, NSwitch, NDivider } from 'naive-ui';
 
 defineProps<{
   enabled: boolean;
-  minFileSize: number;
   hideDownloadBar: boolean;
   autoLaunchApp: boolean;
   forwardCookies: boolean;
@@ -18,7 +16,6 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:enabled': [value: boolean];
-  'update:minFileSize': [value: number];
   'update:hideDownloadBar': [value: boolean];
   'update:autoLaunchApp': [value: boolean];
   'update:forwardCookies': [value: boolean];
@@ -41,24 +38,6 @@ const { t: i18n } = useI18n();
         </div>
       </template>
       <NSwitch :value="enabled" @update:value="emit('update:enabled', $event)" />
-    </NFormItem>
-
-    <NFormItem :label="i18n('options_min_size_label', 'Minimum File Size (MB)')">
-      <template #label>
-        <div class="label-group">
-          <span>{{ i18n('options_min_size_label', 'Minimum File Size (MB)') }}</span>
-          <span class="label-hint">{{
-            i18n('options_min_size_desc', 'Skip files smaller than this threshold')
-          }}</span>
-        </div>
-      </template>
-      <NInputNumber
-        :value="minFileSize"
-        :min="0"
-        :step="1"
-        style="width: 120px"
-        @update:value="(v: number | null) => emit('update:minFileSize', v ?? 0)"
-      />
     </NFormItem>
 
     <NDivider />

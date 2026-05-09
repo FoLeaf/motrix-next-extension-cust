@@ -93,14 +93,6 @@
     "message": "ブラウザのダウンロードを自動的に横取りする",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "最小ファイルサイズ (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "この閾値より小さいファイルをスキップ",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "通知",
     "description": "Toggle label for enabling notifications"

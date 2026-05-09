@@ -93,14 +93,6 @@
     "message": "Автоматично прехващане на изтегляния от браузъра",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Минимален размер на файла (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Пропускане на файлове по-малки от този праг",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Известия",
     "description": "Toggle label for enabling notifications"

@@ -39,7 +39,7 @@ entrypoints/
 lib/                             # Core logic — all services use dependency injection
 ├── download/
 │   ├── orchestrator.ts          # Download interception entry point, retry-after-wake
-│   ├── filter.ts                # 6-stage filter pipeline (see Section A′)
+│   ├── filter.ts                # 5-stage filter pipeline (see Section A′)
 │   └── metadata-collector.ts    # Filename, cookie, referer extraction
 ├── rpc/
 │   └── aria2-client.ts          # aria2 JSON-RPC 2.0 client with retry and auth
@@ -88,7 +88,7 @@ public/_locales/                 # Chrome i18n message bundles (26 languages, se
 
 ### A′. Download Filter Pipeline
 
-The 6-stage filter (`lib/download/filter.ts`) evaluates downloads in strict order:
+The 5-stage filter (`lib/download/filter.ts`) evaluates downloads in strict order:
 
 | Stage | Gate               | Pass                               | Reject                             |
 | ----- | ------------------ | ---------------------------------- | ---------------------------------- |
@@ -96,7 +96,7 @@ The 6-stage filter (`lib/download/filter.ts`) evaluates downloads in strict orde
 | 2     | Self-trigger guard | Not triggered by Motrix itself     | Skip — avoid infinite loop         |
 | 3     | URL scheme         | `http:`, `https:`, `ftp:`          | Skip — `blob:`, `data:`, `chrome:` |
 | 4     | Per-site rules     | `always-intercept` or `use-global` | Skip — `always-skip`               |
-| 5     | Minimum file size  | `contentLength >= minFileSize`     | Skip — file too small              |
+| 5     | Document MIME      | Non-document file MIME             | Skip — document response           |
 | 6     | Final verdict      | Intercept                          | —                                  |
 
 Every stage returns a typed `FilterResult` with the reason code. All stages are pure functions — no side effects, fully unit-testable.

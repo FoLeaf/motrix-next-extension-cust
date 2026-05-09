@@ -32,7 +32,7 @@
 ## Features
 
 - **Download interception** — Automatically captures browser downloads and routes them to Motrix Next for multi-threaded acceleration
-- **Smart filtering** — 6-stage pipeline: global toggle → self-trigger guard → URL scheme → per-site rules → minimum file size → final verdict
+- **Smart filtering** — 5-stage pipeline: global toggle → self-trigger guard → URL scheme → per-site rules → document MIME guard
 - **Per-site rules** — Glob-pattern rules (e.g. `*.github.com`) to always intercept, always skip, or defer to global settings
 - **Context menu** — Right-click any link, image, audio, or video → "Download with Motrix Next"
 - **Magnet & torrent** — `magnet:` URIs and `.torrent` files are automatically captured and routed to aria2
@@ -157,7 +157,7 @@ motrix-next-extension/
 │   └── options/App.vue         #   Full-page settings — connection, behavior, rules
 ├── lib/                        # Core logic (dependency-injected, fully testable)
 │   ├── api/                    #   Desktop HTTP API client (Axum REST)
-│   ├── download/               #   Interception orchestrator, 6-stage filter, metadata collector
+│   ├── download/               #   Interception orchestrator, 5-stage filter, metadata collector
 │   ├── services/               #   Connection, wake, context menu, notifications, download bar, theme
 │   ├── protocol/               #   motrixnext:// protocol URL builder
 │   └── storage/                #   Zod-validated schemas, migration framework, diagnostic log
@@ -207,7 +207,7 @@ A self-contained static page for manually verifying download interception:
 npx serve test-site -p 3001
 ```
 
-Covers: Apple IPSW direct links, `.torrent` files, `magnet:` URIs, Linux ISOs, speed test binaries, and edge cases (`blob:`, `data:`, small files).
+Covers: Apple IPSW direct links, `.torrent` files, `magnet:` URIs, Linux ISOs, speed test binaries, and edge cases (`blob:`, `data:`).
 
 ## Contributing
 

@@ -87,7 +87,6 @@ describe('migrateStorage', () => {
       _version: 1,
       settings: {
         enabled: true,
-        minFileSize: 5,
         fallbackToBrowser: true,
         hideDownloadBar: false,
         notifyOnStart: true,
@@ -108,7 +107,6 @@ describe('migrateStorage', () => {
     expect(migratedSettings).not.toHaveProperty('fallbackToBrowser');
     // Preserved fields remain intact
     expect(migratedSettings.enabled).toBe(true);
-    expect(migratedSettings.minFileSize).toBe(5);
     expect(migratedSettings.hideDownloadBar).toBe(false);
     expect(migratedSettings.autoLaunchApp).toBe(true);
     expect(setCall._version).toBe(STORAGE_VERSION);
@@ -119,7 +117,6 @@ describe('migrateStorage', () => {
       _version: 1,
       settings: {
         enabled: true,
-        minFileSize: 0,
         hideDownloadBar: false,
         autoLaunchApp: true,
       },

@@ -44,7 +44,6 @@ describe('StorageService.load', () => {
       connection: { port: 9000, secret: 'test' },
       settings: {
         enabled: false,
-        minFileSize: 5,
         hideDownloadBar: true,
         forwardCookies: true,
       },
@@ -56,7 +55,7 @@ describe('StorageService.load', () => {
     expect(result.connection.port).toBe(9000);
     expect(result.connection.secret).toBe('test');
     expect(result.settings.enabled).toBe(false);
-    expect(result.settings.minFileSize).toBe(5);
+    expect(result.settings.hideDownloadBar).toBe(true);
     expect(migration.from).toBe(1);
     expect(migration.to).toBe(2);
     expect(migration.migrated).toBe(true);
@@ -101,7 +100,6 @@ describe('StorageService.saveSettings', () => {
 
     const settings = {
       enabled: false,
-      minFileSize: 10,
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,

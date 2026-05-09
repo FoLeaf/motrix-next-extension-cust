@@ -25,7 +25,7 @@ KEY FEATURES
 
 • Automatic Download Interception — Captures browser downloads and routes them to aria2 for multi-threaded acceleration. Works transparently — just download as you normally would.
 
-• Smart Filtering Pipeline — A 6-stage filter decides what to intercept: global toggle, self-trigger guard, URL scheme check, per-site rules, minimum file size, and final verdict.
+• Smart Filtering Pipeline — A 5-stage filter decides what to intercept: global toggle, self-trigger guard, URL scheme check, per-site rules, and document MIME guard.
 
 • Per-Site Rules — Add glob-pattern rules (e.g. *.github.com) to always intercept, always skip, or defer to global settings for specific domains.
 

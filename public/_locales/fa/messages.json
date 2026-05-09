@@ -93,14 +93,6 @@
     "message": "رهگیری خودکار دانلودهای مرورگر",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "حداقل حجم فایل (مگابایت)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "رد کردن فایل‌های کوچک‌تر از این آستانه",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "اعلان‌ها",
     "description": "Toggle label for enabling notifications"

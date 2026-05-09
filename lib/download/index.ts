@@ -4,7 +4,6 @@ export {
   EnabledStage,
   SelfTriggerStage,
   SchemeStage,
-  FileSizeStage,
   SiteRuleStage,
   createFilterPipeline,
   evaluateFilterPipeline,

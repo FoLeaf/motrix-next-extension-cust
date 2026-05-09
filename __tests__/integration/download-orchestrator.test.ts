@@ -361,16 +361,17 @@ describe('DownloadOrchestrator', () => {
       );
     });
 
-    it('skips files below minimum size threshold', async () => {
-      (deps.getSettings as ReturnType<typeof vi.fn>).mockReturnValue({
-        ...DEFAULT_DOWNLOAD_SETTINGS,
-        minFileSize: 10, // 10 MB minimum
-      });
+    it('routes small files because size-based filtering was removed', async () => {
       const item = createMockDownloadItem({ fileSize: 1_000_000 }); // 1 MB
 
       const intercepted = await orchestrator.handleCreated(item);
 
-      expect(intercepted).toBe(false);
+      expect(intercepted).toBe(true);
+      expect(deps.downloads.cancel).toHaveBeenCalledWith(1);
+      expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
+        'https://example.com/file.zip',
+        'https://example.com/page',
+      );
     });
   });
 

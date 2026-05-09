@@ -93,14 +93,6 @@
     "message": "Intersepsi otomatis unduhan browser",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Ukuran file minimum (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Lewati file yang lebih kecil dari ambang batas ini",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Notifikasi",
     "description": "Toggle label for enabling notifications"

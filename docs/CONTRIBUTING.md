@@ -108,7 +108,7 @@ The extension uses Chrome's native i18n system with `messages.json` files under 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-feat: add minimum file size indicator in popup
+feat: add download interception status indicator in popup
 fix(filter): handle blob URLs in scheme validation stage
 refactor: extract completion polling into standalone service
 test: add site rule glob matching edge cases

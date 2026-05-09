@@ -93,14 +93,6 @@
     "message": "Interceptar automaticamente os downloads do navegador",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Tamanho mínimo do arquivo (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Ignorar arquivos menores que este limite",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Notificações",
     "description": "Toggle label for enabling notifications"

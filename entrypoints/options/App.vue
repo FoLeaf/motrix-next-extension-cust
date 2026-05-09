@@ -95,7 +95,6 @@ interface SettingsForm {
   port: number;
   secret: string;
   enabled: boolean;
-  minFileSize: number;
   hideDownloadBar: boolean;
   autoLaunchApp: boolean;
   forwardCookies: boolean;
@@ -106,7 +105,6 @@ function buildForm(): SettingsForm {
     port: DEFAULT_CONNECTION_CONFIG.port,
     secret: DEFAULT_CONNECTION_CONFIG.secret,
     enabled: DEFAULT_DOWNLOAD_SETTINGS.enabled,
-    minFileSize: DEFAULT_DOWNLOAD_SETTINGS.minFileSize,
     hideDownloadBar: DEFAULT_DOWNLOAD_SETTINGS.hideDownloadBar,
     autoLaunchApp: DEFAULT_DOWNLOAD_SETTINGS.autoLaunchApp,
     forwardCookies: DEFAULT_DOWNLOAD_SETTINGS.forwardCookies,
@@ -140,7 +138,6 @@ const {
     });
     await storageService.saveSettings({
       enabled: f.enabled,
-      minFileSize: f.minFileSize,
       hideDownloadBar: f.hideDownloadBar,
       autoLaunchApp: f.autoLaunchApp,
       forwardCookies: f.forwardCookies,
@@ -229,7 +226,6 @@ async function loadFromStorage(): Promise<void> {
   form.value.port = data.connection.port;
   form.value.secret = data.connection.secret;
   form.value.enabled = data.settings.enabled;
-  form.value.minFileSize = data.settings.minFileSize;
   form.value.hideDownloadBar =
     data.settings.hideDownloadBar &&
     (await permissionService.hasDownloadUiAccess().catch(() => false));
@@ -365,12 +361,10 @@ onUnmounted(() => {
               <div class="card">
                 <BehaviorSection
                   :enabled="form.enabled"
-                  :min-file-size="form.minFileSize"
                   :hide-download-bar="form.hideDownloadBar"
                   :auto-launch-app="form.autoLaunchApp"
                   :forward-cookies="form.forwardCookies"
                   @update:enabled="form.enabled = $event"
-                  @update:min-file-size="form.minFileSize = $event"
                   @update:hide-download-bar="handleHideDownloadBarChange"
                   @update:auto-launch-app="form.autoLaunchApp = $event"
                   @update:forward-cookies="handleForwardCookiesChange"

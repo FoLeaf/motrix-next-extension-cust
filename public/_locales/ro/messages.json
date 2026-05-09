@@ -93,14 +93,6 @@
     "message": "Interceptează automat descărcările din browser",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Dimensiune minimă fișier (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Ignoră fișierele mai mici decât acest prag",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Notificări",
     "description": "Toggle label for enabling notifications"

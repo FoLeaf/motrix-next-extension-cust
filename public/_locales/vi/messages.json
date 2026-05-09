@@ -93,14 +93,6 @@
     "message": "Tự động chặn tải xuống từ trình duyệt",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "Kích thước tệp tối thiểu (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "Bỏ qua các tệp nhỏ hơn ngưỡng này",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "Thông báo",
     "description": "Toggle label for enabling notifications"

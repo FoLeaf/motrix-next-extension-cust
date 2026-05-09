@@ -93,14 +93,6 @@
     "message": "自動攔截瀏覽器下載",
     "description": "Description text for the interception toggle"
   },
-  "options_min_size_label": {
-    "message": "最小檔案大小 (MB)",
-    "description": "Label for minimum file size filter"
-  },
-  "options_min_size_desc": {
-    "message": "略過小於此門檻的檔案",
-    "description": "Description text for minimum file size input"
-  },
   "options_notify_label": {
     "message": "通知",
     "description": "Toggle label for enabling notifications"
