@@ -26,13 +26,14 @@ import {
   parseUiPrefs,
 } from '@/lib/storage';
 import { PermissionService } from '@/lib/services';
-import type { ConnectionConfig, DiagnosticEvent } from '@/shared/types';
+import type { ConnectionConfig, DiagnosticEvent, InterceptionScope } from '@/shared/types';
 import {
   DEFAULT_CONNECTION_CONFIG,
   DEFAULT_DOWNLOAD_SETTINGS,
   DEFAULT_UI_PREFS,
 } from '@/shared/constants';
 import { useTheme } from '@/shared/use-theme';
+import { getBootstrappedUiPrefs } from '@/shared/theme-bootstrap';
 import { usePreferenceForm } from '@/shared/use-preference-form';
 
 import { useSiteRules } from './composables/use-site-rules';
@@ -52,7 +53,8 @@ import LanguageSection from './components/LanguageSection.vue';
 
 // ─── Theme + Color Scheme ───────────────────────────────────────────
 
-const colorSchemeId = ref(DEFAULT_UI_PREFS.colorScheme);
+const bootstrappedUiPrefs = getBootstrappedUiPrefs();
+const colorSchemeId = ref(bootstrappedUiPrefs?.colorScheme ?? DEFAULT_UI_PREFS.colorScheme);
 const { naiveTheme, themeOverrides, setTheme } = useTheme(colorSchemeId);
 
 // ─── i18n ───────────────────────────────────────────────────────────
@@ -107,6 +109,9 @@ interface SettingsForm {
 }
 
 const interceptionEnabled = ref(DEFAULT_DOWNLOAD_SETTINGS.enabled);
+const interceptionScope = ref<InterceptionScope>({
+  ...DEFAULT_DOWNLOAD_SETTINGS.interceptionScope,
+});
 
 function buildForm(): SettingsForm {
   return {
@@ -174,6 +179,17 @@ async function handleEnabledChange(value: boolean): Promise<void> {
     await storageService.updateSettings({ enabled: value });
   } catch {
     interceptionEnabled.value = previous;
+    toast.error(i18n('options_save_error', 'Failed to save settings'));
+  }
+}
+
+async function handleInterceptionScopeChange(value: Partial<InterceptionScope>): Promise<void> {
+  const previous = { ...interceptionScope.value };
+  interceptionScope.value = { ...interceptionScope.value, ...value };
+  try {
+    await storageService.updateSettings({ interceptionScope: interceptionScope.value });
+  } catch {
+    interceptionScope.value = previous;
     toast.error(i18n('options_save_error', 'Failed to save settings'));
   }
 }
@@ -246,6 +262,7 @@ async function loadFromStorage(): Promise<void> {
   form.value.port = data.connection.port;
   form.value.secret = data.connection.secret;
   interceptionEnabled.value = data.settings.enabled;
+  interceptionScope.value = data.settings.interceptionScope;
   form.value.hideDownloadBar =
     data.settings.hideDownloadBar &&
     (await permissionService.hasDownloadUiAccess().catch(() => false));
@@ -271,6 +288,7 @@ function applyConnectionStorageChange(value: unknown): void {
 async function applySettingsStorageChange(value: unknown): Promise<void> {
   const settings = parseDownloadSettings(value);
   interceptionEnabled.value = settings.enabled;
+  interceptionScope.value = settings.interceptionScope;
   if (isDirty.value) return;
 
   form.value.hideDownloadBar =
@@ -441,10 +459,12 @@ onUnmounted(() => {
               <div class="card">
                 <BehaviorSection
                   :enabled="interceptionEnabled"
+                  :interception-scope="interceptionScope"
                   :hide-download-bar="form.hideDownloadBar"
                   :auto-launch-app="form.autoLaunchApp"
                   :forward-cookies="form.forwardCookies"
                   @update:enabled="handleEnabledChange"
+                  @update:scope="handleInterceptionScopeChange"
                   @update:hide-download-bar="handleHideDownloadBarChange"
                   @update:auto-launch-app="form.autoLaunchApp = $event"
                   @update:forward-cookies="handleForwardCookiesChange"

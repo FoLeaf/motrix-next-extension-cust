@@ -1,22 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMagnetClickHandler } from '@/lib/services/magnet-interception';
+import { createExternalProtocolClickHandler } from '@/lib/services/magnet-interception';
 
-function appendMagnetLink(): HTMLAnchorElement {
+function appendProtocolLink(href: string): HTMLAnchorElement {
   const anchor = document.createElement('a');
-  anchor.href = 'magnet:?xt=urn:btih:abc123';
-  anchor.textContent = 'Magnet';
+  anchor.href = href;
+  anchor.textContent = 'Protocol';
   document.body.append(anchor);
   return anchor;
 }
 
-describe('createMagnetClickHandler', () => {
+describe('createExternalProtocolClickHandler', () => {
   it('does not prevent navigation when interception is paused', () => {
-    const sendMagnet = vi.fn();
-    const handler = createMagnetClickHandler({
-      isEnabled: () => false,
-      sendMagnet,
+    const sendProtocol = vi.fn();
+    const handler = createExternalProtocolClickHandler({
+      shouldIntercept: () => false,
+      sendProtocol,
     });
-    const anchor = appendMagnetLink();
+    const anchor = appendProtocolLink('magnet:?xt=urn:btih:abc123');
     const event = new MouseEvent('click', { bubbles: true, cancelable: true });
 
     anchor.addEventListener('click', handler, true);
@@ -24,16 +24,20 @@ describe('createMagnetClickHandler', () => {
 
     expect(allowed).toBe(true);
     expect(event.defaultPrevented).toBe(false);
-    expect(sendMagnet).not.toHaveBeenCalled();
+    expect(sendProtocol).not.toHaveBeenCalled();
   });
 
-  it('prevents navigation and sends the magnet URI when interception is enabled', () => {
-    const sendMagnet = vi.fn();
-    const handler = createMagnetClickHandler({
-      isEnabled: () => true,
-      sendMagnet,
+  it.each([
+    ['magnet', 'magnet:?xt=urn:btih:abc123'],
+    ['ed2k', 'ed2k://|file|eMule0.50a-Installer.exe|3389035|HASH|/'],
+    ['thunder', 'thunder://QUFodHRwOi8vZXhhbXBsZS5jb20vZmlsZS56aXBaWg=='],
+  ])('prevents navigation and sends %s links when enabled', (protocol, href) => {
+    const sendProtocol = vi.fn();
+    const handler = createExternalProtocolClickHandler({
+      shouldIntercept: (candidate) => candidate.protocol === protocol,
+      sendProtocol,
     });
-    const anchor = appendMagnetLink();
+    const anchor = appendProtocolLink(href);
     const event = new MouseEvent('click', { bubbles: true, cancelable: true });
 
     anchor.addEventListener('click', handler, true);
@@ -41,6 +45,6 @@ describe('createMagnetClickHandler', () => {
 
     expect(allowed).toBe(false);
     expect(event.defaultPrevented).toBe(true);
-    expect(sendMagnet).toHaveBeenCalledWith('magnet:?xt=urn:btih:abc123');
+    expect(sendProtocol).toHaveBeenCalledWith({ protocol, url: href });
   });
 });

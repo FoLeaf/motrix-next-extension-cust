@@ -34,7 +34,18 @@ export class SelfTriggerStage implements FilterStage {
 }
 
 /**
- * Stage 3: Only intercept http/https/ftp schemes.
+ * Stage 3: Respect the browser download interception scope.
+ */
+export class InterceptionScopeStage implements FilterStage {
+  readonly name = 'interception-scope';
+
+  evaluate(_ctx: FilterContext, config: DownloadSettings): FilterVerdict | null {
+    return config.interceptionScope.browserDownloads ? null : 'skip';
+  }
+}
+
+/**
+ * Stage 4: Only intercept http/https/ftp schemes.
  * Reject blob:, data:, chrome:, chrome-extension:, about:.
  */
 export class SchemeStage implements FilterStage {
@@ -52,7 +63,7 @@ export class SchemeStage implements FilterStage {
 }
 
 /**
- * Stage 4: Apply per-site rules.
+ * Stage 5: Apply per-site rules.
  *
  * `SiteRuleStage` takes an additional `rules` parameter because it needs
  * external state (the rule list) that isn't part of `DownloadSettings`.
@@ -155,7 +166,7 @@ export class MimeTypeStage implements FilterStage {
  * Create the complete filter pipeline with all stages.
  *
  * Pipeline order:
- * 1. Enabled → 2. SelfTrigger → 3. Scheme → 4. SiteRule → 5. MimeType
+ * 1. Enabled → 2. SelfTrigger → 3. InterceptionScope → 4. Scheme → 5. SiteRule → 6. MimeType
  *
  * @param getRules - Getter for current site rules (lazy evaluation)
  */
@@ -163,6 +174,7 @@ export function createFilterPipeline(getRules: () => SiteRule[]): FilterStage[] 
   return [
     new EnabledStage(),
     new SelfTriggerStage(),
+    new InterceptionScopeStage(),
     new SchemeStage(),
     new SiteRuleStage(getRules),
     new MimeTypeStage(),

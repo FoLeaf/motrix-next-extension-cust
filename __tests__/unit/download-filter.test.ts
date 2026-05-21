@@ -7,6 +7,7 @@ import {
   SchemeStage,
   SiteRuleStage,
   MimeTypeStage,
+  InterceptionScopeStage,
 } from '@/lib/download/filter';
 import type { FilterContext, DownloadSettings, SiteRule } from '@/shared/types';
 
@@ -17,6 +18,12 @@ const DEFAULT_SETTINGS: DownloadSettings = {
   hideDownloadBar: false,
   autoLaunchApp: true,
   forwardCookies: false,
+  interceptionScope: {
+    browserDownloads: true,
+    magnet: true,
+    ed2k: true,
+    thunder: true,
+  },
 };
 
 function createContext(overrides?: Partial<FilterContext>): FilterContext {
@@ -98,6 +105,24 @@ describe('SchemeStage', () => {
   it('returns skip for chrome-extension URLs', () => {
     const ctx = createContext({ url: 'chrome-extension://abc/file.zip' });
     expect(stage.evaluate(ctx, DEFAULT_SETTINGS)).toBe('skip');
+  });
+});
+
+// ─── Interception Scope Stage ───────────────────────────
+
+describe('InterceptionScopeStage', () => {
+  const stage = new InterceptionScopeStage();
+
+  it('skips browser downloads when browser download interception is disabled', () => {
+    const result = stage.evaluate(createContext(), {
+      ...DEFAULT_SETTINGS,
+      interceptionScope: {
+        ...DEFAULT_SETTINGS.interceptionScope,
+        browserDownloads: false,
+      },
+    });
+
+    expect(result).toBe('skip');
   });
 });
 
@@ -353,6 +378,23 @@ describe('evaluateFilterPipeline', () => {
     );
     expect(result.verdict).toBe('skip');
     expect(result.stageName).toBe('scheme');
+  });
+
+  it('returns skip with "interception-scope" stageName when browser downloads are disabled', () => {
+    const stages = createFilterPipeline(() => []);
+    const result = evaluateFilterPipeline(
+      createContext(),
+      {
+        ...DEFAULT_SETTINGS,
+        interceptionScope: {
+          ...DEFAULT_SETTINGS.interceptionScope,
+          browserDownloads: false,
+        },
+      },
+      stages,
+    );
+    expect(result.verdict).toBe('skip');
+    expect(result.stageName).toBe('interception-scope');
   });
 
   it('intercepts small files because size-based filtering was removed', () => {

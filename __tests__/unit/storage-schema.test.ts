@@ -66,6 +66,12 @@ describe('parseDownloadSettings', () => {
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: false,
+        magnet: true,
+        ed2k: false,
+        thunder: true,
+      },
     };
     const result = parseDownloadSettings(input);
     expect(result).toEqual(input);
@@ -78,6 +84,12 @@ describe('parseDownloadSettings', () => {
       hideDownloadBar: false,
       autoLaunchApp: true,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: true,
+        magnet: true,
+        ed2k: true,
+        thunder: true,
+      },
     });
   });
 
@@ -88,6 +100,12 @@ describe('parseDownloadSettings', () => {
       hideDownloadBar: false,
       autoLaunchApp: true,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: true,
+        magnet: true,
+        ed2k: true,
+        thunder: true,
+      },
     });
   });
 
@@ -115,6 +133,12 @@ describe('parseDownloadSettings', () => {
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: true,
+        magnet: true,
+        ed2k: true,
+        thunder: true,
+      },
     });
     expect(result).not.toHaveProperty('unknown');
   });
@@ -316,6 +340,7 @@ describe('parseDiagnosticEvents', () => {
     // User-initiated actions
     'context_menu_triggered',
     'magnet_intercepted',
+    'protocol_intercepted',
     // Infrastructure
     'storage_persist_failed',
     'storage_migrated',
@@ -343,6 +368,12 @@ describe('parseStorage', () => {
       hideDownloadBar: false,
       autoLaunchApp: true,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: true,
+        magnet: true,
+        ed2k: true,
+        thunder: true,
+      },
     });
     expect(result.siteRules).toEqual([]);
     expect(result.uiPrefs).toEqual({ theme: 'system', colorScheme: 'amber', locale: 'auto' });
@@ -368,6 +399,12 @@ describe('parseStorage', () => {
       hideDownloadBar: false,
       autoLaunchApp: true,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: true,
+        magnet: true,
+        ed2k: true,
+        thunder: true,
+      },
     });
   });
 
@@ -379,6 +416,12 @@ describe('parseStorage', () => {
         hideDownloadBar: true,
         autoLaunchApp: false,
         forwardCookies: true,
+        interceptionScope: {
+          browserDownloads: false,
+          magnet: false,
+          ed2k: true,
+          thunder: false,
+        },
         extra: 'ignored',
       },
       uiPrefs: { theme: 'dark', colorScheme: 'mint', locale: 'en', extra: true },
@@ -390,6 +433,12 @@ describe('parseStorage', () => {
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: false,
+        magnet: false,
+        ed2k: true,
+        thunder: false,
+      },
     });
     expect(result.uiPrefs).toEqual({ theme: 'dark', colorScheme: 'mint', locale: 'en' });
   });

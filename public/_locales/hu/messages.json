@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "Add meg a cookie- és webhelyengedélyeket a cookie-k Motrix Next felé továbbításához.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "Böngészős letöltések",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Magnet hivatkozások",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "ED2K hivatkozások",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Thunder hivatkozások",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, torrentfájlok és normál böngészős letöltések",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "Weboldalakról megnyitott magnet: hivatkozások",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "Weboldalakról megnyitott ed2k: hivatkozások",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "Weboldalakról megnyitott thunder: hivatkozások",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "Acordă permisiuni pentru cookie-uri și site-uri ca să redirecționezi cookie-uri către Motrix Next.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "Descărcări din browser",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Linkuri Magnet",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "Linkuri ED2K",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Linkuri Thunder",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, fișiere torrent și descărcări normale din browser",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "Linkuri magnet: deschise din pagini web",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "Linkuri ed2k: deschise din pagini web",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "Linkuri thunder: deschise din pagini web",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

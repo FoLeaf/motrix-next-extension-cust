@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "برای ارسال کوکی‌ها به Motrix Next، مجوزهای کوکی و سایت را بدهید.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "دانلودهای مرورگر",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "لینک‌های Magnet",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "لینک‌های ED2K",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "لینک‌های Thunder",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP، HTTPS، FTP، فایل‌های تورنت و دانلودهای عادی مرورگر",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "لینک‌های magnet: که از صفحه‌های وب باز می‌شوند",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "لینک‌های ed2k: که از صفحه‌های وب باز می‌شوند",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "لینک‌های thunder: که از صفحه‌های وب باز می‌شوند",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

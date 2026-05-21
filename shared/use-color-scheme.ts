@@ -15,28 +15,7 @@
 import { computed, watchEffect, type Ref } from 'vue';
 import { argbFromHex, hexFromArgb, themeFromSourceColor } from '@material/material-color-utilities';
 import type { GlobalThemeOverrides } from 'naive-ui';
-
-// ── MCU Property → CSS Variable Mapping ─────────────────────────────
-// Ref: desktop useColorScheme.ts L26-43
-
-const MCU_TO_CSS: Record<string, string> = {
-  primary: '--color-primary',
-  onPrimary: '--color-on-primary',
-  primaryContainer: '--color-primary-container',
-  onPrimaryContainer: '--color-on-primary-container',
-  surface: '--color-surface',
-  onSurface: '--color-on-surface',
-  onSurfaceVariant: '--color-on-surface-variant',
-  outline: '--color-outline',
-  outlineVariant: '--color-outline-variant',
-  error: '--color-error',
-  onError: '--color-on-error',
-  errorContainer: '--color-error-container',
-  tertiary: '--color-tertiary',
-  onTertiary: '--color-on-tertiary',
-  inverseSurface: '--color-inverse-surface',
-  inverseOnSurface: '--color-on-inverse-surface',
-};
+import { applyThemeVars, createThemeVars } from '@/lib/services/theme-vars';
 
 // ── M3 Surface Container Tones ──────────────────────────────────────
 // Ref: desktop useColorScheme.ts L49-66
@@ -59,15 +38,6 @@ const SURFACE_TONES = {
     surfaceContainerHighest: 22,
   },
 } as const;
-
-const SURFACE_CSS_MAP: Record<string, string> = {
-  surfaceDim: '--color-surface-dim',
-  surfaceContainerLowest: '--color-surface-container-lowest',
-  surfaceContainerLow: '--color-surface-container-low',
-  surfaceContainer: '--color-surface-container',
-  surfaceContainerHigh: '--color-surface-container-high',
-  surfaceContainerHighest: '--color-surface-container-highest',
-};
 
 // ── Public API ──────────────────────────────────────────────────────
 
@@ -99,56 +69,11 @@ export function useColorScheme(seedHex: Ref<string>, isDark: Ref<boolean>) {
   // ── CSS Variable Injection ──────────────────────────────────────
   // Ref: desktop useColorScheme.ts L111-181
   watchEffect(() => {
-    const scheme = activeScheme.value;
-    const root = document.documentElement.style;
-    const json = scheme.toJSON() as Record<string, number>;
-
-    // Core M3 tokens
-    for (const [mcuKey, cssVar] of Object.entries(MCU_TO_CSS)) {
-      const argb = json[mcuKey];
-      if (argb !== undefined) {
-        root.setProperty(cssVar, hexFromArgb(argb));
-      }
-    }
-
-    // Surface container tokens (manually derived from neutral palette)
-    const containers = surfaceContainers.value;
-    for (const [key, cssVar] of Object.entries(SURFACE_CSS_MAP)) {
-      root.setProperty(cssVar, hexFromArgb(containers[key]!));
-    }
-
-    // Brand aliases
-    const primary = hexFromArgb(scheme.primary);
-    root.setProperty('--color-brand', primary);
-
-    // Warning follows primary for brand consistency
-    root.setProperty('--color-warning', primary);
-
-    // Success (green) — keep fixed for semantic clarity
-    // Light: #386a20, Dark: #8edb6a (from Amber Gold MCU output)
-    root.setProperty('--color-success', isDark.value ? '#8edb6a' : '#386a20');
-    root.setProperty('--color-on-success', isDark.value ? '#0a3900' : '#ffffff');
-
-    // Error container
-    root.setProperty('--color-error-container', hexFromArgb(scheme.errorContainer));
-
-    // Inverse (toasts / snackbars)
-    root.setProperty('--color-inverse-surface', hexFromArgb(scheme.inverseSurface));
-    root.setProperty('--color-on-inverse-surface', hexFromArgb(scheme.inverseOnSurface));
-
-    // Primary tonal shades for tinted surfaces
-    const palette = m3Theme.value.palettes.primary;
-    root.setProperty('--color-primary-light-5', hexFromArgb(palette.tone(isDark.value ? 30 : 80)));
-    root.setProperty('--color-primary-light-9', hexFromArgb(palette.tone(isDark.value ? 10 : 95)));
-
-    // Scrollbar
-    const sr = (scheme.onSurface >> 16) & 0xff;
-    const sg = (scheme.onSurface >> 8) & 0xff;
-    const sb = scheme.onSurface & 0xff;
-    root.setProperty(
-      '--color-scrollbar-thumb',
-      `rgba(${sr}, ${sg}, ${sb}, ${isDark.value ? 0.22 : 0.3})`,
-    );
+    const vars = createThemeVars({
+      seedHex: seedHex.value,
+      isDark: isDark.value,
+    });
+    applyThemeVars(vars, document.documentElement.style);
   });
 
   // ── Naive UI Theme Overrides ──────────────────────────────────────

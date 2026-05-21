@@ -6,8 +6,18 @@ export { DownloadBarService } from './download-bar';
 export type { DownloadBarInput } from './download-bar';
 export { PermissionService } from './permissions';
 export type { PermissionsApi, RuntimePermissionSet } from './permissions';
-export { createMagnetClickHandler } from './magnet-interception';
-export type { MagnetClickHandlerDeps } from './magnet-interception';
+export {
+  createExternalProtocolClickHandler,
+  createMagnetClickHandler,
+  isExternalProtocol,
+  protocolFromUrl,
+} from './magnet-interception';
+export type {
+  ExternalProtocol,
+  ExternalProtocolClickHandlerDeps,
+  ExternalProtocolLink,
+  MagnetClickHandlerDeps,
+} from './magnet-interception';
 export { NotificationService } from './notification';
 export { resolveThemeClass } from './theme';
 export type { ThemePreference } from './theme';

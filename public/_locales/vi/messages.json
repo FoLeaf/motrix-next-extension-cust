@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "Cấp quyền cookie và trang web để chuyển tiếp cookie tới Motrix Next.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "Tải xuống của trình duyệt",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Liên kết Magnet",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "Liên kết ED2K",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Liên kết Thunder",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, tệp torrent và các lượt tải xuống thông thường của trình duyệt",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "Liên kết magnet: được mở từ trang web",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "Liên kết ed2k: được mở từ trang web",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "Liên kết thunder: được mở từ trang web",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

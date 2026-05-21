@@ -10,6 +10,12 @@ export const DEFAULT_DOWNLOAD_SETTINGS: Readonly<DownloadSettings> = {
   hideDownloadBar: false,
   autoLaunchApp: true,
   forwardCookies: true,
+  interceptionScope: {
+    browserDownloads: true,
+    magnet: true,
+    ed2k: true,
+    thunder: true,
+  },
 } as const;
 
 export const DEFAULT_UI_PREFS: Readonly<UiPrefs> = {

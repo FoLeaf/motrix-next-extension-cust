@@ -76,6 +76,14 @@ export interface DownloadSettings {
   hideDownloadBar: boolean;
   autoLaunchApp: boolean;
   forwardCookies: boolean;
+  interceptionScope: InterceptionScope;
+}
+
+export interface InterceptionScope {
+  browserDownloads: boolean;
+  magnet: boolean;
+  ed2k: boolean;
+  thunder: boolean;
 }
 
 export interface SiteRule {
@@ -124,6 +132,7 @@ export type DiagnosticCode =
   // ── User-initiated actions ────────────────────────────
   | 'context_menu_triggered'
   | 'magnet_intercepted'
+  | 'protocol_intercepted'
   // ── Infrastructure ────────────────────────────────────
   | 'storage_persist_failed'
   | 'storage_migrated'

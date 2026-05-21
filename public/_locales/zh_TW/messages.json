@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "請授予 Cookie 與網站權限，以將 Cookie 轉送至 Motrix Next。",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "瀏覽器下載",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "磁力連結",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "ED2K 連結",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "迅雷連結",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP、HTTPS、FTP、種子檔案與一般瀏覽器下載",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "網頁中開啟的 magnet: 連結",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "網頁中開啟的 ed2k: 連結",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "網頁中開啟的 thunder: 連結",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

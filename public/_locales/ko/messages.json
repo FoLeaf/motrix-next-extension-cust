@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "쿠키를 Motrix Next로 전달하려면 쿠키 및 사이트 권한을 허용하세요.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "브라우저 다운로드",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Magnet 링크",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "ED2K 링크",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Thunder 링크",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, torrent 파일 및 일반 브라우저 다운로드",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "웹 페이지에서 열린 magnet: 링크",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "웹 페이지에서 열린 ed2k: 링크",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "웹 페이지에서 열린 thunder: 링크",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

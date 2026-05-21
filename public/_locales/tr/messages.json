@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "Çerezleri Motrix Next’e iletmek için çerez ve site izinleri verin.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "Tarayıcı İndirmeleri",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Magnet Bağlantıları",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "ED2K Bağlantıları",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Thunder Bağlantıları",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, torrent dosyaları ve normal tarayıcı indirmeleri",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "Web sayfalarından açılan magnet: bağlantıları",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "Web sayfalarından açılan ed2k: bağlantıları",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "Web sayfalarından açılan thunder: bağlantıları",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

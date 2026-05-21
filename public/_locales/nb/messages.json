@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "Gi informasjonskapsel- og nettstedstillatelser for å videresende informasjonskapsler til Motrix Next.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "Nettlesernedlastinger",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Magnet-lenker",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "ED2K-lenker",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Thunder-lenker",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, torrentfiler og vanlige nettlesernedlastinger",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "magnet:-lenker åpnet fra nettsider",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "ed2k:-lenker åpnet fra nettsider",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "thunder:-lenker åpnet fra nettsider",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

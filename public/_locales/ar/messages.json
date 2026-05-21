@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "امنح أذونات ملفات تعريف الارتباط والمواقع لإعادة توجيه ملفات تعريف الارتباط إلى Motrix Next.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "تنزيلات المتصفح",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "روابط Magnet",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "روابط ED2K",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "روابط Thunder",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP وHTTPS وFTP وملفات التورنت والتنزيلات العادية في المتصفح",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "روابط magnet: المفتوحة من صفحات الويب",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "روابط ed2k: المفتوحة من صفحات الويب",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "روابط thunder: المفتوحة من صفحات الويب",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

@@ -10,6 +10,7 @@ import {
 } from './filename-metadata';
 import type { DesktopApiClient } from '@/lib/api/desktop-client';
 import { ApiAuthError } from '@/shared/errors';
+import { isCookieCollectableUrl } from '@/lib/services/magnet-interception';
 
 // ─── Dependency Interface ───────────────────────────────
 
@@ -498,6 +499,9 @@ export class DownloadOrchestrator {
    */
   private async collectCookies(url: string): Promise<string> {
     if (!this.deps.getSettings().forwardCookies) {
+      return '';
+    }
+    if (!isCookieCollectableUrl(url)) {
       return '';
     }
     if (!this.deps.cookies) {

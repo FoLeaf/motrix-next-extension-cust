@@ -5,10 +5,12 @@
  * Toggle switches for controlling download interception behavior.
  * Uses Naive UI NSwitch, matching the desktop Basic.vue controls.
  */
-import { NFormItem, NSwitch, NDivider } from 'naive-ui';
+import { NCollapseTransition, NFormItem, NSwitch, NDivider } from 'naive-ui';
+import type { InterceptionScope } from '@/shared/types';
 
 defineProps<{
   enabled: boolean;
+  interceptionScope: InterceptionScope;
   hideDownloadBar: boolean;
   autoLaunchApp: boolean;
   forwardCookies: boolean;
@@ -16,6 +18,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:enabled': [value: boolean];
+  'update:scope': [value: Partial<InterceptionScope>];
   'update:hideDownloadBar': [value: boolean];
   'update:autoLaunchApp': [value: boolean];
   'update:forwardCookies': [value: boolean];
@@ -39,6 +42,85 @@ const { t: i18n } = useI18n();
       </template>
       <NSwitch :value="enabled" @update:value="emit('update:enabled', $event)" />
     </NFormItem>
+
+    <NCollapseTransition :show="enabled">
+      <div class="scope-panel">
+        <NFormItem
+          class="scope-panel__item"
+          :label="i18n('options_scope_browser_downloads_label', 'Browser Downloads')"
+        >
+          <template #label>
+            <div class="label-group">
+              <span>{{ i18n('options_scope_browser_downloads_label', 'Browser Downloads') }}</span>
+              <span class="label-hint">{{
+                i18n(
+                  'options_scope_browser_downloads_desc',
+                  'HTTP, HTTPS, FTP, torrent files, and normal browser downloads',
+                )
+              }}</span>
+            </div>
+          </template>
+          <NSwitch
+            :value="interceptionScope.browserDownloads"
+            @update:value="emit('update:scope', { browserDownloads: $event })"
+          />
+        </NFormItem>
+
+        <NFormItem
+          class="scope-panel__item"
+          :label="i18n('options_scope_magnet_label', 'Magnet Links')"
+        >
+          <template #label>
+            <div class="label-group">
+              <span>{{ i18n('options_scope_magnet_label', 'Magnet Links') }}</span>
+              <span class="label-hint">{{
+                i18n('options_scope_magnet_desc', 'magnet: links opened from web pages')
+              }}</span>
+            </div>
+          </template>
+          <NSwitch
+            :value="interceptionScope.magnet"
+            @update:value="emit('update:scope', { magnet: $event })"
+          />
+        </NFormItem>
+
+        <NFormItem
+          class="scope-panel__item"
+          :label="i18n('options_scope_ed2k_label', 'ED2K Links')"
+        >
+          <template #label>
+            <div class="label-group">
+              <span>{{ i18n('options_scope_ed2k_label', 'ED2K Links') }}</span>
+              <span class="label-hint">{{
+                i18n('options_scope_ed2k_desc', 'ed2k: links opened from web pages')
+              }}</span>
+            </div>
+          </template>
+          <NSwitch
+            :value="interceptionScope.ed2k"
+            @update:value="emit('update:scope', { ed2k: $event })"
+          />
+        </NFormItem>
+
+        <NFormItem
+          class="scope-panel__item"
+          :label="i18n('options_scope_thunder_label', 'Thunder Links')"
+        >
+          <template #label>
+            <div class="label-group">
+              <span>{{ i18n('options_scope_thunder_label', 'Thunder Links') }}</span>
+              <span class="label-hint">{{
+                i18n('options_scope_thunder_desc', 'thunder: links opened from web pages')
+              }}</span>
+            </div>
+          </template>
+          <NSwitch
+            :value="interceptionScope.thunder"
+            @update:value="emit('update:scope', { thunder: $event })"
+          />
+        </NFormItem>
+      </div>
+    </NCollapseTransition>
 
     <NDivider />
 
@@ -106,5 +188,15 @@ const { t: i18n } = useI18n();
   opacity: 0.8;
   margin-top: 2px;
   font-weight: 400;
+}
+
+.scope-panel {
+  margin: 8px 0 16px;
+  padding: 0 0 0 18px;
+  overflow: hidden;
+}
+
+.scope-panel__item {
+  margin-bottom: 0;
 }
 </style>

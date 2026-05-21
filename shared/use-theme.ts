@@ -15,6 +15,7 @@ import { ref, computed, onMounted, onBeforeUnmount, type Ref } from 'vue';
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui';
 import { useColorScheme } from './use-color-scheme';
 import { resolveScheme } from './color-schemes';
+import { getBootstrappedUiPrefs } from './theme-bootstrap';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -30,7 +31,8 @@ export function useTheme(colorSchemeId?: Ref<string>): {
   themeOverrides: Ref<GlobalThemeOverrides>;
   setTheme: (mode: ThemeMode) => void;
 } {
-  const mode = ref<ThemeMode>('system');
+  const bootstrappedPrefs = getBootstrappedUiPrefs();
+  const mode = ref<ThemeMode>(bootstrappedPrefs?.theme ?? 'system');
   const systemDark = ref(false);
 
   let mql: MediaQueryList | null = null;
@@ -47,7 +49,7 @@ export function useTheme(colorSchemeId?: Ref<string>): {
 
   /** Reactive seed hex derived from the color scheme ID. */
   const seedHex = computed(() => {
-    const id = colorSchemeId?.value ?? 'amber';
+    const id = colorSchemeId?.value ?? bootstrappedPrefs?.colorScheme ?? 'amber';
     return resolveScheme(id).seed;
   });
 

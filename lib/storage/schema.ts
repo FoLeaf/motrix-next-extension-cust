@@ -45,6 +45,25 @@ const ConnectionConfigSchema = z.object({
     .default(DEFAULT_CONNECTION_CONFIG.secret),
 });
 
+const InterceptionScopeSchema = z.object({
+  browserDownloads: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.browserDownloads)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.browserDownloads),
+  magnet: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.magnet)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.magnet),
+  ed2k: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.ed2k)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.ed2k),
+  thunder: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.thunder)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope.thunder),
+});
+
 const DownloadSettingsSchema = z.object({
   enabled: z
     .boolean()
@@ -62,6 +81,9 @@ const DownloadSettingsSchema = z.object({
     .boolean()
     .catch(DEFAULT_DOWNLOAD_SETTINGS.forwardCookies)
     .default(DEFAULT_DOWNLOAD_SETTINGS.forwardCookies),
+  interceptionScope: InterceptionScopeSchema.catch(
+    DEFAULT_DOWNLOAD_SETTINGS.interceptionScope,
+  ).default(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope),
 });
 
 const SiteRuleActionSchema = z.enum(['always-intercept', 'always-skip', 'use-global']);
@@ -115,6 +137,7 @@ const DiagnosticCodeSchema = z.enum([
   // User-initiated actions
   'context_menu_triggered',
   'magnet_intercepted',
+  'protocol_intercepted',
   // Infrastructure
   'storage_persist_failed',
   'storage_migrated',

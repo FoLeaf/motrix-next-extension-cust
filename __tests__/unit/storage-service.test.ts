@@ -121,6 +121,12 @@ describe('StorageService.saveSettings', () => {
       hideDownloadBar: true,
       autoLaunchApp: false,
       forwardCookies: true,
+      interceptionScope: {
+        browserDownloads: true,
+        magnet: true,
+        ed2k: true,
+        thunder: true,
+      },
     };
 
     await service.saveSettings(settings);
@@ -140,6 +146,12 @@ describe('StorageService.updateSettings', () => {
         hideDownloadBar: true,
         autoLaunchApp: false,
         forwardCookies: true,
+        interceptionScope: {
+          browserDownloads: true,
+          magnet: false,
+          ed2k: true,
+          thunder: true,
+        },
       },
     });
     const service = new StorageService(api);
@@ -152,6 +164,12 @@ describe('StorageService.updateSettings', () => {
         hideDownloadBar: true,
         autoLaunchApp: false,
         forwardCookies: true,
+        interceptionScope: {
+          browserDownloads: true,
+          magnet: false,
+          ed2k: true,
+          thunder: true,
+        },
       },
     });
   });

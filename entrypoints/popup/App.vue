@@ -28,6 +28,7 @@ import {
 import type { StatResponse } from '@/lib/api/desktop-client';
 import { DEFAULT_CONNECTION_CONFIG, DEFAULT_UI_PREFS } from '@/shared/constants';
 import { useTheme } from '@/shared/use-theme';
+import { getBootstrappedUiPrefs } from '@/shared/theme-bootstrap';
 
 import { createI18n, I18N_KEY, useNaiveLocale } from '@/shared/i18n/engine';
 
@@ -43,7 +44,8 @@ const { naiveLocale, naiveDateLocale } = useNaiveLocale(effectiveLocale);
 
 // ─── Theme + Color Scheme ───────────────────────────────────────────
 
-const colorSchemeId = ref(DEFAULT_UI_PREFS.colorScheme);
+const bootstrappedUiPrefs = getBootstrappedUiPrefs();
+const colorSchemeId = ref(bootstrappedUiPrefs?.colorScheme ?? DEFAULT_UI_PREFS.colorScheme);
 const { naiveTheme, themeOverrides } = useTheme(colorSchemeId);
 
 // ─── State ──────────────────────────────────────────────────────────

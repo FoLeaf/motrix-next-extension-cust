@@ -1,18 +1,18 @@
 import { browser } from 'wxt/browser';
-import { createMagnetClickHandler } from '@/lib/services/magnet-interception';
+import { createExternalProtocolClickHandler, type ExternalProtocol } from '@/lib/services';
 import { parseDownloadSettings } from '@/lib/storage';
 import { DEFAULT_DOWNLOAD_SETTINGS } from '@/shared/constants';
+import type { InterceptionScope } from '@/shared/types';
 
 /**
- * @fileoverview Content script for magnet link interception.
+ * @fileoverview Content script for external protocol link interception.
  *
- * `magnet:` is a protocol link, not an HTTP download — `browser.downloads`
- * and `browser.webRequest` cannot intercept it. This content script captures
- * clicks on `<a href="magnet:...">` elements at the DOM level and routes
- * them to the background service worker via `browser.runtime.sendMessage`.
+ * Protocol links are not HTTP downloads — `browser.downloads` and
+ * `browser.webRequest` cannot intercept them. This content script captures
+ * clicks at the DOM level and routes supported links to the background service
+ * worker via `browser.runtime.sendMessage`.
  *
- * The background handles the magnet URI through the desktop API, which
- * natively supports magnet links.
+ * The background handles the URI through the desktop API.
  */
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -20,30 +20,35 @@ export default defineContentScript({
 
   main() {
     let interceptionEnabled = DEFAULT_DOWNLOAD_SETTINGS.enabled;
+    let interceptionScope: InterceptionScope = { ...DEFAULT_DOWNLOAD_SETTINGS.interceptionScope };
 
     async function refreshInterceptionState(): Promise<void> {
       const data = await browser.storage.local.get('settings');
-      interceptionEnabled = parseDownloadSettings(data.settings).enabled;
+      const settings = parseDownloadSettings(data.settings);
+      interceptionEnabled = settings.enabled;
+      interceptionScope = settings.interceptionScope;
     }
 
     void refreshInterceptionState();
 
     browser.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local' || !changes.settings) return;
-      interceptionEnabled = parseDownloadSettings(changes.settings.newValue).enabled;
+      const settings = parseDownloadSettings(changes.settings.newValue);
+      interceptionEnabled = settings.enabled;
+      interceptionScope = settings.interceptionScope;
     });
 
-    const handleMagnetClick = createMagnetClickHandler({
-      isEnabled: () => interceptionEnabled,
-      sendMagnet: (url) => {
-        void browser.runtime.sendMessage({ type: 'HANDLE_MAGNET', url });
+    const handleProtocolClick = createExternalProtocolClickHandler({
+      shouldIntercept: (link) => interceptionEnabled && interceptionScope[link.protocol],
+      sendProtocol: ({ protocol, url }: { protocol: ExternalProtocol; url: string }) => {
+        void browser.runtime.sendMessage({ type: 'HANDLE_EXTERNAL_PROTOCOL', protocol, url });
       },
     });
 
     // Use capturing phase to intercept before any page-level handlers
     document.addEventListener(
       'click',
-      handleMagnetClick,
+      handleProtocolClick,
       true, // capture phase
     );
   },

@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "Przyznaj uprawnienia do plików cookie i witryn, aby przekazywać pliki cookie do Motrix Next.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "Pobrania przeglądarki",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Linki Magnet",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "Linki ED2K",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Linki Thunder",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, pliki torrent i zwykłe pobrania przeglądarki",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "Linki magnet: otwierane ze stron internetowych",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "Linki ed2k: otwierane ze stron internetowych",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "Linki thunder: otwierane ze stron internetowych",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

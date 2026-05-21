@@ -423,5 +423,37 @@
   "options_permission_cookies_denied": {
     "message": "Разрешите cookie и сайты, чтобы передавать cookie в Motrix Next.",
     "description": "Toast shown when cookie forwarding permissions are unavailable."
+  },
+  "options_scope_browser_downloads_label": {
+    "message": "Загрузки браузера",
+    "description": "Label for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_label": {
+    "message": "Magnet-ссылки",
+    "description": "Label for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_label": {
+    "message": "ED2K-ссылки",
+    "description": "Label for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_label": {
+    "message": "Thunder-ссылки",
+    "description": "Label for the Thunder link interception scope toggle."
+  },
+  "options_scope_browser_downloads_desc": {
+    "message": "HTTP, HTTPS, FTP, torrent-файлы и обычные загрузки браузера",
+    "description": "Description for the browser download interception scope toggle."
+  },
+  "options_scope_magnet_desc": {
+    "message": "Ссылки magnet:, открываемые с веб-страниц",
+    "description": "Description for the magnet link interception scope toggle."
+  },
+  "options_scope_ed2k_desc": {
+    "message": "Ссылки ed2k:, открываемые с веб-страниц",
+    "description": "Description for the ED2K link interception scope toggle."
+  },
+  "options_scope_thunder_desc": {
+    "message": "Ссылки thunder:, открываемые с веб-страниц",
+    "description": "Description for the Thunder link interception scope toggle."
   }
 }

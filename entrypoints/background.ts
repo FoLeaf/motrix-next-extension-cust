@@ -10,6 +10,7 @@ import {
   NotificationService,
   WakeService,
   PermissionService,
+  isExternalProtocol,
 } from '@/lib/services';
 import {
   DiagnosticLog,
@@ -23,7 +24,7 @@ import {
 import { buildProtocolUrl, ProtocolAction } from '@/lib/protocol';
 import { decodeThunderLink } from '@/shared/thunder';
 import { DEFAULT_DOWNLOAD_SETTINGS } from '@/shared/constants';
-import type { DownloadSettings, SiteRule, DiagnosticCode } from '@/shared/types';
+import type { DownloadSettings, SiteRule, DiagnosticCode, InterceptionScope } from '@/shared/types';
 import type { DiagnosticInput } from '@/lib/storage/diagnostic-log';
 import { I18nEngine } from '@/shared/i18n/engine';
 import { resolveLocaleId, FALLBACK_LOCALE } from '@/shared/i18n/dictionaries';
@@ -32,6 +33,25 @@ export default defineBackground(() => {
   // ─── State (restored from storage on each wake) ───
   let settings: DownloadSettings = { ...DEFAULT_DOWNLOAD_SETTINGS };
   let siteRules: SiteRule[] = [];
+
+  type ExternalProtocolMessage = {
+    type: 'HANDLE_EXTERNAL_PROTOCOL';
+    url: string;
+    protocol: keyof InterceptionScope;
+  };
+
+  function parseExternalProtocolMessage(msg: unknown): ExternalProtocolMessage | null {
+    if (msg == null || typeof msg !== 'object') return null;
+    const raw = msg as Record<string, unknown>;
+    if (raw.type !== 'HANDLE_EXTERNAL_PROTOCOL') return null;
+    if (typeof raw.url !== 'string') return null;
+    if (typeof raw.protocol !== 'string' || !isExternalProtocol(raw.protocol)) return null;
+    return {
+      type: 'HANDLE_EXTERNAL_PROTOCOL',
+      url: raw.url,
+      protocol: raw.protocol,
+    };
+  }
 
   const bgI18n = new I18nEngine(FALLBACK_LOCALE);
   // Firefox does not support browser.downloads.setUiOptions — create a no-op
@@ -453,31 +473,46 @@ export default defineBackground(() => {
     }
   });
 
-  // Magnet link interception from content script
+  // External protocol link interception from content script
   browser.runtime.onMessage.addListener((msg) => {
-    if (msg?.type === 'HANDLE_MAGNET' && typeof msg.url === 'string') {
+    const protocolMessage = parseExternalProtocolMessage(msg);
+    if (protocolMessage) {
       void loadConfig().then(async () => {
         if (!settings.enabled) {
-          logInfo('download_skipped', `Skipped magnet while interception is paused: ${msg.url}`, {
-            url: msg.url as string,
-            stage: 'enabled',
+          logInfo(
+            'download_skipped',
+            `Skipped protocol while interception is paused: ${protocolMessage.url}`,
+            {
+              url: protocolMessage.url,
+              stage: 'enabled',
+            },
+          );
+          return;
+        }
+        if (!settings.interceptionScope[protocolMessage.protocol]) {
+          logInfo('download_skipped', `Skipped protocol by scope: ${protocolMessage.url}`, {
+            url: protocolMessage.url,
+            protocol: protocolMessage.protocol,
+            stage: 'interception-scope',
           });
           return;
         }
 
-        logInfo('magnet_intercepted', `Magnet link intercepted: ${msg.url as string}`, {
-          url: msg.url as string,
+        logInfo('protocol_intercepted', `External protocol intercepted: ${protocolMessage.url}`, {
+          url: protocolMessage.url,
+          protocol: protocolMessage.protocol,
         });
 
         try {
-          const url = decodeThunderLink(msg.url as string);
+          const url = decodeThunderLink(protocolMessage.url);
           await orchestrator.sendUrl(url, '');
         } catch (e) {
           logError(
             'download_failed',
-            `Magnet download failed: ${e instanceof Error ? e.message : String(e)}`,
+            `Protocol download failed: ${e instanceof Error ? e.message : String(e)}`,
             {
-              url: msg.url as string,
+              url: protocolMessage.url,
+              protocol: protocolMessage.protocol,
             },
           );
         }
