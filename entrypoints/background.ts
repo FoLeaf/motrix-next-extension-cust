@@ -22,7 +22,6 @@ import {
   parseUiPrefs,
 } from '@/lib/storage';
 import { buildProtocolUrl, ProtocolAction } from '@/lib/protocol';
-import { decodeThunderLink } from '@/shared/thunder';
 import { DEFAULT_DOWNLOAD_SETTINGS } from '@/shared/constants';
 import type { DownloadSettings, SiteRule, DiagnosticCode, InterceptionScope } from '@/shared/types';
 import type { DiagnosticInput } from '@/lib/storage/diagnostic-log';
@@ -443,9 +442,8 @@ export default defineBackground(() => {
 
     void loadConfig().then(async () => {
       try {
-        const url = decodeThunderLink(rawUrl);
         const tabUrl = info.pageUrl ?? '';
-        await orchestrator.sendUrl(url, tabUrl);
+        await orchestrator.sendUrl(rawUrl, tabUrl);
       } catch (e) {
         logError(
           'download_failed',
@@ -504,8 +502,7 @@ export default defineBackground(() => {
         });
 
         try {
-          const url = decodeThunderLink(protocolMessage.url);
-          await orchestrator.sendUrl(url, '');
+          await orchestrator.sendUrl(protocolMessage.url, '');
         } catch (e) {
           logError(
             'download_failed',

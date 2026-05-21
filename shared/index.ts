@@ -17,7 +17,6 @@ export {
 
 // ─── Utilities ──────────────────────────────────────────
 export { extractFilenameFromUrl } from './url';
-export { decodeThunderLink } from './thunder';
 
 // ─── Error Types ────────────────────────────────────────
 export {
