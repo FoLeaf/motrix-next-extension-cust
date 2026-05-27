@@ -5,6 +5,7 @@ import type { DownloadSettings, SiteRule } from '@/shared/types';
 import { DEFAULT_DOWNLOAD_SETTINGS } from '@/shared/constants';
 import { DesktopApiClient } from '@/lib/api/desktop-client';
 import { ApiAuthError } from '@/shared/errors';
+import type { RequestHeaderContext } from '@/lib/download/request-context';
 
 // ─── Mock Types ─────────────────────────────────────────
 
@@ -18,6 +19,7 @@ interface MockDownloadItem {
   mime: string;
   byExtensionId?: string;
   state: string;
+  requestHeaderContext?: RequestHeaderContext;
 }
 
 function createMockDownloadItem(overrides?: Partial<MockDownloadItem>): MockDownloadItem {
@@ -428,10 +430,140 @@ describe('DownloadOrchestrator', () => {
 
       expect(addDownload).toHaveBeenCalledWith({
         url: 'https://example.com/file.zip',
+        finalUrl: 'https://example.com/file.zip',
         referer: 'https://example.com/page',
         cookie: 'token=abc123; session=xyz789',
         filename: 'file.zip',
       });
+    });
+
+    it('forwards captured request headers and User-Agent only through the HTTP API path', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockResolvedValue({ action: 'queued' });
+      const apiDeps = createMockDeps({ desktopClient, openProtocolNewTask: undefined });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          requestHeaderContext: {
+            url: 'https://example.com/file.zip',
+            createdAt: 1000,
+            referer: 'https://download.example.com/page',
+            userAgent: 'Browser/1.0',
+            requestHeaders: [{ name: 'Accept', value: 'application/octet-stream' }],
+          },
+        }),
+      );
+
+      expect(addDownload).toHaveBeenCalledWith({
+        url: 'https://example.com/file.zip',
+        finalUrl: 'https://example.com/file.zip',
+        referer: 'https://download.example.com/page',
+        cookie: undefined,
+        filename: 'file.zip',
+        userAgent: 'Browser/1.0',
+        requestHeaders: [{ name: 'Accept', value: 'application/octet-stream' }],
+      });
+    });
+
+    it('reuses captured request headers when retrying after wake', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      const addDownload = vi
+        .spyOn(desktopClient, 'addDownload')
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValueOnce({ action: 'queued' });
+      const apiDeps = createMockDeps({
+        desktopClient,
+        wakeDesktop: vi.fn().mockResolvedValue(true),
+        openProtocolNewTask: undefined,
+      });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          requestHeaderContext: {
+            url: 'https://example.com/file.zip',
+            createdAt: 1000,
+            userAgent: 'Browser/1.0',
+            requestHeaders: [{ name: 'Accept-Language', value: 'en-US' }],
+          },
+        }),
+      );
+
+      expect(addDownload).toHaveBeenLastCalledWith({
+        url: 'https://example.com/file.zip',
+        finalUrl: 'https://example.com/file.zip',
+        referer: 'https://example.com/page',
+        cookie: undefined,
+        filename: 'file.zip',
+        userAgent: 'Browser/1.0',
+        requestHeaders: [{ name: 'Accept-Language', value: 'en-US' }],
+      });
+    });
+
+    it('does not place captured request headers in the deep-link fallback', async () => {
+      const apiDeps = createMockDeps({
+        getSettings: vi.fn().mockReturnValue({
+          ...DEFAULT_DOWNLOAD_SETTINGS,
+          forwardCookies: true,
+        } satisfies DownloadSettings),
+        cookies: {
+          getAll: vi.fn().mockResolvedValue([{ name: 'token', value: 'abc123' }]),
+        },
+      });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          requestHeaderContext: {
+            url: 'https://example.com/file.zip',
+            createdAt: 1000,
+            userAgent: 'Browser/1.0',
+            requestHeaders: [{ name: 'Origin', value: 'https://example.com' }],
+          },
+        }),
+      );
+
+      expect(apiDeps.openProtocolNewTask).toHaveBeenCalledWith(
+        'https://example.com/file.zip',
+        'https://example.com/page',
+      );
+    });
+
+    it('logs only header context counts and booleans after HTTP routing', async () => {
+      const desktopClient = new DesktopApiClient({ port: 16801, secret: 'secret' });
+      vi.spyOn(desktopClient, 'addDownload').mockResolvedValue({ action: 'queued' });
+      const apiDeps = createMockDeps({ desktopClient, openProtocolNewTask: undefined });
+      const orch = new DownloadOrchestrator(apiDeps);
+
+      await orch.handleCreated(
+        createMockDownloadItem({
+          requestHeaderContext: {
+            url: 'https://example.com/file.zip',
+            createdAt: 1000,
+            userAgent: 'SensitiveBrowser/1.0',
+            requestHeaders: [{ name: 'Origin', value: 'https://private.example.com' }],
+          },
+        }),
+      );
+
+      const routedCall = (apiDeps.diagnosticLog.append as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => (c[0] as { code: string }).code === 'download_routed',
+      );
+
+      expect(routedCall).toBeDefined();
+      expect((routedCall![0] as { context: Record<string, unknown> }).context).toEqual(
+        expect.objectContaining({
+          hasCookie: false,
+          hasUserAgent: true,
+          headerCount: 1,
+          matchedHeaderContext: true,
+        }),
+      );
+      expect(JSON.stringify(routedCall![0])).not.toContain('SensitiveBrowser');
+      expect(JSON.stringify(routedCall![0])).not.toContain('private.example.com');
     });
 
     it('does not collect cookies when cookie forwarding is disabled', async () => {
@@ -540,6 +672,7 @@ describe('DownloadOrchestrator', () => {
 
       expect(addDownload).toHaveBeenCalledWith({
         url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+        finalUrl: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
         referer: 'https://example.com/page',
         cookie: undefined,
       });
@@ -564,6 +697,7 @@ describe('DownloadOrchestrator', () => {
 
       expect(addDownload).toHaveBeenCalledWith({
         url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+        finalUrl: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
         referer: 'https://example.com/page',
         cookie: undefined,
       });
@@ -597,6 +731,7 @@ describe('DownloadOrchestrator', () => {
 
       expect(addDownload).toHaveBeenCalledWith({
         url: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
+        finalUrl: 'https://mail-attachment.googleusercontent.com/attachment/u/0/',
         referer: 'https://example.com/page',
         cookie: undefined,
         filename: 'ИТОГИ ЛДУ 2026.xlsx',
@@ -622,6 +757,7 @@ describe('DownloadOrchestrator', () => {
 
       expect(addDownload).toHaveBeenCalledWith({
         url: 'https://cdn.example.com/hash',
+        finalUrl: 'https://cdn.example.com/hash',
         referer: 'https://example.com/page',
         cookie: undefined,
         filename: 'Итоги_2026.docx',
@@ -647,6 +783,7 @@ describe('DownloadOrchestrator', () => {
 
       expect(addDownload).toHaveBeenCalledWith({
         url: 'https://cdn.example.com/hash',
+        finalUrl: 'https://cdn.example.com/hash',
         referer: 'https://example.com/page',
         cookie: undefined,
         filename: 'Итоги_2026.docx',

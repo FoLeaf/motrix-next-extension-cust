@@ -3,6 +3,12 @@ import { storage as wxtStorage } from '#imports';
 import { DownloadOrchestrator } from '@/lib/download';
 import { DownloadFilenameGate, type SuggestedFilename } from '@/lib/download/filename-gate';
 import { DownloadFilenameMetadataStore } from '@/lib/download/filename-metadata';
+import {
+  RequestHeaderContextStore,
+  buildRequestHeaderExtraInfoSpec,
+  captureRequestHeaderContext,
+  type RequestHeaderBrowser,
+} from '@/lib/download/request-context';
 import { DesktopApiClient } from '@/lib/api';
 import {
   DownloadBarService,
@@ -62,6 +68,7 @@ export default defineBackground(() => {
       });
   const diagnosticLog = new DiagnosticLog();
   const filenameMetadata = new DownloadFilenameMetadataStore();
+  const requestHeaderContexts = new RequestHeaderContextStore();
   const filenameGate = new DownloadFilenameGate();
 
   const storageService = new StorageService(createWxtStorageApi(wxtStorage));
@@ -309,7 +316,15 @@ export default defineBackground(() => {
   };
   type WebRequestHeader = { name?: string; value?: string };
   type WebRequestHeadersDetails = { url: string; responseHeaders?: WebRequestHeader[] };
+  type WebRequestBeforeSendHeadersDetails = { url: string; requestHeaders?: WebRequestHeader[] };
   type WebRequestApi = {
+    onBeforeSendHeaders?: {
+      addListener: (
+        callback: (details: WebRequestBeforeSendHeadersDetails) => void,
+        filter: { urls: string[] },
+        extraInfoSpec?: string[],
+      ) => void;
+    };
     onHeadersReceived?: {
       addListener: (
         callback: (details: WebRequestHeadersDetails) => void,
@@ -318,6 +333,56 @@ export default defineBackground(() => {
       ) => void;
     };
   };
+
+  function registerRequestHeaderContextListener(): void {
+    const browserWithWebRequest = browser as typeof browser & { webRequest?: WebRequestApi };
+    const requestHeaderBrowser: RequestHeaderBrowser = import.meta.env.FIREFOX
+      ? 'firefox'
+      : 'chromium';
+
+    const addListener = (extraInfoSpec: string[]) => {
+      browserWithWebRequest.webRequest?.onBeforeSendHeaders?.addListener(
+        (details): undefined => {
+          const context = captureRequestHeaderContext({
+            url: details.url,
+            requestHeaders: details.requestHeaders,
+          });
+          if (context) {
+            requestHeaderContexts.remember(context);
+          }
+          return undefined;
+        },
+        { urls: ['http://*/*', 'https://*/*'] },
+        extraInfoSpec,
+      );
+    };
+
+    const extraInfoSpec = buildRequestHeaderExtraInfoSpec(requestHeaderBrowser);
+    try {
+      addListener(extraInfoSpec);
+    } catch (e) {
+      if (!import.meta.env.FIREFOX && extraInfoSpec.includes('extraHeaders')) {
+        try {
+          addListener(['requestHeaders']);
+          logWarn('download_fallback', 'Request header context listener downgraded', {
+            stage: 'request-headers',
+          });
+          return;
+        } catch (fallbackError) {
+          logWarn(
+            'download_fallback',
+            `Request header context listener unavailable: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
+          );
+          return;
+        }
+      }
+
+      logWarn(
+        'download_fallback',
+        `Request header context listener unavailable: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
 
   function registerFilenameMetadataListeners(): void {
     const downloads = browser.downloads as DownloadsWithDeterminingFilename;
@@ -349,6 +414,7 @@ export default defineBackground(() => {
     }
   }
 
+  registerRequestHeaderContextListener();
   registerFilenameMetadataListeners();
 
   // ─── Download interception ─────────────────────────────
@@ -380,6 +446,10 @@ export default defineBackground(() => {
             | undefined,
           state: item.state ?? 'in_progress',
           referrer: item.referrer ?? '',
+          requestHeaderContext: requestHeaderContexts.match({
+            url: item.url,
+            finalUrl: item.finalUrl ?? item.url,
+          }),
         });
       } catch (e) {
         logError(

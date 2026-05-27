@@ -41,6 +41,11 @@ export interface Aria2InputOptions {
   'user-agent'?: string;
 }
 
+export interface RequestHeader {
+  name: string;
+  value: string;
+}
+
 // ─── Connection Config Types ────────────────────────────
 
 export interface ConnectionConfig {

@@ -20,6 +20,7 @@ import {
   API_REQUEST_TIMEOUT_MS,
 } from '@/shared/constants';
 import { ApiAuthError, ApiError, ApiTimeoutError, ApiUnreachableError } from '@/shared/errors';
+import type { RequestHeader } from '@/shared/types';
 
 z.config({ jitless: true });
 
@@ -51,9 +52,12 @@ export interface ActionResponse {
 
 export interface AddDownloadRequest {
   url: string;
+  finalUrl?: string;
   referer?: string;
   cookie?: string;
   filename?: string;
+  userAgent?: string;
+  requestHeaders?: RequestHeader[];
 }
 
 export interface AddDownloadResponse {

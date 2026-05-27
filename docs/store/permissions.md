@@ -33,7 +33,7 @@ Displays a brief desktop notification when an intercepted download cannot be del
 ### `webRequest`
 
 ```
-Observes response headers for downloads that are already being intercepted through the downloads API. This is used only to read the Content-Disposition filename header before the browser download is cancelled, so Motrix Next can preserve server-provided filenames for authenticated attachment downloads. The extension does not modify, block, redirect, or transmit remote requests to any external service.
+Observes request and response headers for downloads that are already being intercepted through the downloads API. Request headers are filtered to a strict allowlist and forwarded only to the local Motrix Next API so the desktop app can reproduce browser-authenticated downloads more accurately. Response headers are used to read Content-Disposition filenames before the browser download is cancelled. The extension does not modify, block, redirect, or transmit remote requests to any external service.
 ```
 
 ## Required Host Permissions
@@ -53,7 +53,7 @@ Required to read cookies for the download URL's domain when cookie forwarding is
 ### `https://*/*` and `http://*/*`
 
 ```
-Required because chrome.cookies.getAll() needs matching host permissions for the target download domain to successfully read cookies. Since delegated downloads can originate from any site, broad HTTP and HTTPS access is necessary for authenticated downloads and response filename header preservation. Cookies and filename metadata are sent only to the local Motrix Next HTTP API.
+Required because chrome.cookies.getAll() and webRequest need matching host permissions for the target download domain. Since delegated downloads can originate from any site, broad HTTP and HTTPS access is necessary for authenticated downloads, request context preservation, and response filename header preservation. Cookies, filtered request metadata, and filename metadata are sent only to the local Motrix Next HTTP API.
 ```
 
 ## Optional Permissions
@@ -77,7 +77,7 @@ Intercept browser downloads and delegate them to the Motrix Next desktop downloa
 ### Permission Justification Summary
 
 ```
-This extension intercepts browser downloads and sends them to a locally running download manager (Motrix Next). Required permissions: 'downloads' to intercept browser downloads, 'webRequest' to observe Content-Disposition response headers for the same intercepted downloads, 'storage' for local settings persistence, 'contextMenus' for right-click download option, 'notifications' for delivery failure alerts, and 'cookies' for authenticated download forwarding. Required host permissions include localhost for the Motrix Next HTTP API plus broad HTTP/HTTPS origins so cookie forwarding and filename header preservation work for downloads from any site. The only optional permission is 'downloads.ui' for hiding the browser download bar. No data is collected, transmitted, or shared with any external service.
+This extension intercepts browser downloads and sends them to a locally running download manager (Motrix Next). Required permissions: 'downloads' to intercept browser downloads, 'webRequest' to observe filtered request headers and Content-Disposition response headers for the same intercepted downloads, 'storage' for local settings persistence, 'contextMenus' for right-click download option, 'notifications' for delivery failure alerts, and 'cookies' for authenticated download forwarding. Required host permissions include localhost for the Motrix Next HTTP API plus broad HTTP/HTTPS origins so cookie forwarding, request context forwarding, and filename header preservation work for downloads from any site. The only optional permission is 'downloads.ui' for hiding the browser download bar. No data is collected, transmitted, or shared with any external service.
 ```
 
 ### Data Use Disclosures

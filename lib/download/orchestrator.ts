@@ -11,6 +11,7 @@ import {
 import type { DesktopApiClient } from '@/lib/api/desktop-client';
 import { ApiAuthError } from '@/shared/errors';
 import { isCookieCollectableUrl } from '@/lib/services/magnet-interception';
+import type { RequestHeaderContext } from './request-context';
 
 // ─── Dependency Interface ───────────────────────────────
 
@@ -74,6 +75,7 @@ export interface DownloadItem {
   byExtensionId?: string;
   state: string;
   referrer?: string;
+  requestHeaderContext?: RequestHeaderContext;
 }
 
 const GENERIC_FILENAME_HINTS = new Set(['download', UNRESOLVED_FILENAME]);
@@ -199,7 +201,8 @@ export class DownloadOrchestrator {
     }
 
     const settings = this.deps.getSettings();
-    const tabUrl = item.referrer || (await this.deps.getTabUrl());
+    const tabUrl =
+      item.requestHeaderContext?.referer || item.referrer || (await this.deps.getTabUrl());
 
     // ─── Filter ─────────────────────────────────
     const ctx: FilterContext = {
@@ -265,11 +268,13 @@ export class DownloadOrchestrator {
 
     const routed = await this.sendToDesktop(
       effectiveUrl,
+      effectiveUrl,
       tabUrl,
       cookie,
       displayName,
       filenameHint,
       filenameSource,
+      item.requestHeaderContext,
     );
     if (!routed) {
       // Both paths failed — can't route to desktop
@@ -300,7 +305,15 @@ export class DownloadOrchestrator {
     const displayName = filenameHint || url.split('/').pop() || 'download';
     const cookie = await this.collectCookies(url);
 
-    const routed = await this.sendToDesktop(url, tabUrl, cookie, displayName, filenameHint, 'url');
+    const routed = await this.sendToDesktop(
+      url,
+      undefined,
+      tabUrl,
+      cookie,
+      displayName,
+      filenameHint,
+      'url',
+    );
     if (!routed) {
       throw new Error(
         'Desktop app routing unavailable: neither HTTP API nor protocol handler provided',
@@ -318,20 +331,29 @@ export class DownloadOrchestrator {
    */
   private async sendToDesktop(
     url: string,
+    finalUrl: string | undefined,
     referer: string,
     cookie: string,
     displayName: string,
     filenameHint?: string,
     filenameSource: string = 'none',
+    requestHeaderContext?: RequestHeaderContext,
   ): Promise<boolean> {
+    const headerLogContext = this.buildHeaderLogContext(requestHeaderContext);
+
     // Primary: HTTP API
     if (this.deps.desktopClient) {
       try {
         const response = await this.deps.desktopClient.addDownload({
           url,
+          finalUrl: finalUrl || undefined,
           referer: referer || undefined,
           cookie: cookie || undefined,
           ...(filenameHint ? { filename: filenameHint } : {}),
+          ...(requestHeaderContext?.userAgent ? { userAgent: requestHeaderContext.userAgent } : {}),
+          ...(requestHeaderContext?.requestHeaders.length
+            ? { requestHeaders: requestHeaderContext.requestHeaders }
+            : {}),
         });
 
         this.deps.diagnosticLog.append({
@@ -345,6 +367,7 @@ export class DownloadOrchestrator {
             action: response.action,
             ...(response.gid ? { gid: response.gid } : {}),
             hasCookie: cookie.length > 0,
+            ...headerLogContext,
           },
         });
         return true;
@@ -389,9 +412,16 @@ export class DownloadOrchestrator {
 
               const retryResponse = await this.deps.desktopClient.addDownload({
                 url,
+                finalUrl: finalUrl || undefined,
                 referer: referer || undefined,
                 cookie: cookie || undefined,
                 ...(filenameHint ? { filename: filenameHint } : {}),
+                ...(requestHeaderContext?.userAgent
+                  ? { userAgent: requestHeaderContext.userAgent }
+                  : {}),
+                ...(requestHeaderContext?.requestHeaders.length
+                  ? { requestHeaders: requestHeaderContext.requestHeaders }
+                  : {}),
               });
 
               this.deps.diagnosticLog.append({
@@ -405,6 +435,7 @@ export class DownloadOrchestrator {
                   action: retryResponse.action,
                   ...(retryResponse.gid ? { gid: retryResponse.gid } : {}),
                   hasCookie: cookie.length > 0,
+                  ...headerLogContext,
                   afterWake: true,
                 },
               });
@@ -468,12 +499,27 @@ export class DownloadOrchestrator {
           filename: displayName,
           filenameSource,
           hasCookie: false,
+          hasUserAgent: false,
+          headerCount: 0,
+          matchedHeaderContext: false,
         },
       });
       return true;
     }
 
     return false;
+  }
+
+  private buildHeaderLogContext(context: RequestHeaderContext | undefined): {
+    hasUserAgent: boolean;
+    headerCount: number;
+    matchedHeaderContext: boolean;
+  } {
+    return {
+      hasUserAgent: Boolean(context?.userAgent),
+      headerCount: context?.requestHeaders.length ?? 0,
+      matchedHeaderContext: Boolean(context),
+    };
   }
 
   /**

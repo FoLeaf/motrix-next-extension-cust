@@ -139,9 +139,12 @@ describe('DesktopApiClient', () => {
   describe('addDownload', () => {
     const request: AddDownloadRequest = {
       url: 'https://example.com/file.zip',
+      finalUrl: 'https://cdn.example.com/file.zip',
       referer: 'https://example.com/page',
       cookie: 'sid=abc',
       filename: 'file.zip',
+      userAgent: 'Browser/1.0',
+      requestHeaders: [{ name: 'Accept', value: 'application/octet-stream' }],
     };
 
     it('returns AddDownloadResponse on success', async () => {
