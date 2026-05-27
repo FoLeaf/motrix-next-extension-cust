@@ -62,7 +62,7 @@ describe('useDiagnostics', () => {
     const storage = mockStorageService();
     (storage.load as ReturnType<typeof vi.fn>).mockResolvedValue({
       storage: {
-        connection: { port: 24110, secret: 'my-secret' },
+        connection: { port: 29110, secret: 'my-secret' },
         settings: {
           enabled: true,
           hideDownloadBar: false,
@@ -113,7 +113,7 @@ describe('useDiagnostics', () => {
     expect(report.exportedAt).toBeDefined();
     expect(report.extension.version).toBe('1.0.1');
     expect(report.browser.userAgent).toBe('TestAgent');
-    expect(report.config.connection.port).toBe(24110);
+    expect(report.config.connection.port).toBe(29110);
     expect(report.config.siteRules).toHaveLength(1);
     expect(report.diagnosticLog).toHaveLength(1);
 
