@@ -375,6 +375,47 @@ describe('MinimumFileSizeStage', () => {
     expect(stage.evaluate(ctx, enabledSettings)).toBe('skip');
   });
 
+  it('does not skip small torrent files identified by MIME type', () => {
+    const ctx = createContext({
+      url: 'https://example.com/linux',
+      finalUrl: 'https://example.com/linux',
+      filename: 'download',
+      mimeType: 'application/x-bittorrent',
+      totalBytes: 27 * 1024,
+      fileSize: 27 * 1024,
+    });
+
+    expect(stage.evaluate(ctx, enabledSettings)).toBeNull();
+  });
+
+  it('does not skip small torrent files identified by final URL filename', () => {
+    const ctx = createContext({
+      url: 'https://example.com/download?id=1',
+      finalUrl: 'https://cdn.example.com/linux.torrent',
+      filename: 'download',
+      mimeType: 'application/octet-stream',
+      totalBytes: 27 * 1024,
+      fileSize: 27 * 1024,
+    });
+
+    expect(stage.evaluate(ctx, enabledSettings)).toBeNull();
+  });
+
+  it('does not skip small torrent files identified by content disposition filename', () => {
+    const ctx = createContext({
+      url:
+        'https://cdn.example.com/hash?response-content-disposition=' +
+        encodeURIComponent('attachment; filename="linux.torrent"'),
+      finalUrl: 'https://cdn.example.com/hash',
+      filename: 'download',
+      mimeType: 'application/octet-stream',
+      totalBytes: 27 * 1024,
+      fileSize: 27 * 1024,
+    });
+
+    expect(stage.evaluate(ctx, enabledSettings)).toBeNull();
+  });
+
   it('uses fileSize when totalBytes is unknown', () => {
     const ctx = createContext({ totalBytes: -1, fileSize: 1 * 1024 * 1024 });
 

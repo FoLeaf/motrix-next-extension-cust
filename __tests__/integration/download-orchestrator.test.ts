@@ -144,6 +144,34 @@ describe('DownloadOrchestrator', () => {
       );
     });
 
+    it('routes small torrent files even when minimum file size filtering is enabled', async () => {
+      (deps.getSettings as ReturnType<typeof vi.fn>).mockReturnValue({
+        ...DEFAULT_DOWNLOAD_SETTINGS,
+        minimumFileSize: {
+          enabled: true,
+          sizeMb: 5,
+          unknownSizeAction: 'intercept',
+        },
+      } satisfies DownloadSettings);
+      const item = createMockDownloadItem({
+        url: 'https://example.com/linux.torrent',
+        finalUrl: 'https://example.com/linux.torrent',
+        filename: 'linux.torrent',
+        fileSize: 27 * 1024,
+        totalBytes: 27 * 1024,
+        mime: 'application/x-bittorrent',
+      });
+
+      const intercepted = await orchestrator.handleCreated(item);
+
+      expect(intercepted).toBe(true);
+      expect(deps.downloads.cancel).toHaveBeenCalledWith(1);
+      expect(deps.openProtocolNewTask).toHaveBeenCalledWith(
+        'https://example.com/linux.torrent',
+        'https://example.com/page',
+      );
+    });
+
     it('logs download_intercepted before download_routed', async () => {
       const item = createMockDownloadItem();
 

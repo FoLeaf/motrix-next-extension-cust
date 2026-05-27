@@ -6,6 +6,7 @@ import type {
   FilterStage,
 } from '@/shared/types';
 import { INTERCEPTABLE_SCHEMES } from '@/shared/constants';
+import { extractFilenameFromUrl } from '@/shared/url';
 import picomatch from 'picomatch';
 
 // ─── Stages ─────────────────────────────────────────────
@@ -135,9 +136,16 @@ export class SiteRuleStage implements FilterStage {
 export class MinimumFileSizeStage implements FilterStage {
   readonly name = 'minimum-file-size';
 
+  private static readonly TORRENT_MIMES: ReadonlySet<string> = new Set([
+    'application/x-bittorrent',
+    'application/x-torrent',
+    'application/torrent',
+  ]);
+
   evaluate(ctx: FilterContext, config: DownloadSettings): FilterVerdict | null {
     const settings = config.minimumFileSize;
     if (!settings.enabled || settings.sizeMb <= 0) return null;
+    if (this.isTorrentDescriptor(ctx)) return null;
 
     const knownSize = this.resolveKnownSize(ctx);
     if (knownSize === null) {
@@ -151,6 +159,23 @@ export class MinimumFileSizeStage implements FilterStage {
     if (ctx.totalBytes >= 0) return ctx.totalBytes;
     if (ctx.fileSize >= 0) return ctx.fileSize;
     return null;
+  }
+
+  private isTorrentDescriptor(ctx: FilterContext): boolean {
+    if (this.isTorrentMime(ctx.mimeType)) return true;
+    return [ctx.filename, extractFilenameFromUrl(ctx.finalUrl), extractFilenameFromUrl(ctx.url)]
+      .filter((value): value is string => Boolean(value))
+      .some((filename) => this.hasTorrentExtension(filename));
+  }
+
+  private isTorrentMime(mimeType: string): boolean {
+    const normalized = (mimeType.split(';')[0] ?? '').trim().toLowerCase();
+    return MinimumFileSizeStage.TORRENT_MIMES.has(normalized);
+  }
+
+  private hasTorrentExtension(filename: string): boolean {
+    const basename = filename.trim().replace(/^.*[/\\]/, '');
+    return basename.toLowerCase().endsWith('.torrent');
   }
 }
 
