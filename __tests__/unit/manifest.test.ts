@@ -45,5 +45,10 @@ describe('buildExtensionManifest', () => {
     expect(manifest.browser_specific_settings?.gecko.id).toBe(
       'motrix-next-extension@aninsomniacy.dev',
     );
+    expect(manifest.browser_specific_settings?.gecko.strict_min_version).toBe('140.0');
+    expect(manifest.browser_specific_settings?.gecko.data_collection_permissions.required).toEqual([
+      'none',
+    ]);
+    expect(manifest.browser_specific_settings?.gecko_android?.strict_min_version).toBe('142.0');
   });
 });
