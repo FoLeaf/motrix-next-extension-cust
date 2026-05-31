@@ -222,7 +222,7 @@ describe('DownloadOrchestrator', () => {
           calls.push('metadata');
           return {
             filename: 'file.zip',
-            source: 'determining-filename' as const,
+            source: 'content-disposition' as const,
           };
         }),
       };
@@ -845,7 +845,7 @@ describe('DownloadOrchestrator', () => {
       });
     });
 
-    it('forwards filename metadata captured after browser filename determination', async () => {
+    it('forwards filename metadata captured from Content-Disposition', async () => {
       const desktopClient = new DesktopApiClient({ port: 29110, secret: 'secret' });
       const addDownload = vi
         .spyOn(desktopClient, 'addDownload')
@@ -856,7 +856,7 @@ describe('DownloadOrchestrator', () => {
         filenameMetadata: {
           resolve: vi.fn().mockResolvedValue({
             filename: 'ИТОГИ ЛДУ 2026.xlsx',
-            source: 'determining-filename',
+            source: 'content-disposition',
           }),
         },
       });

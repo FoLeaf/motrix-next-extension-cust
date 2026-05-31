@@ -2,7 +2,6 @@ import { browser, type Browser } from 'wxt/browser';
 import { storage as wxtStorage } from '#imports';
 import { DownloadOrchestrator } from '@/lib/download';
 import { DuplicateDownloadGuard } from '@/lib/download/duplicate-guard';
-import { DownloadFilenameGate, type SuggestedFilename } from '@/lib/download/filename-gate';
 import { DownloadFilenameMetadataStore } from '@/lib/download/filename-metadata';
 import {
   RequestHeaderContextStore,
@@ -70,7 +69,6 @@ export default defineBackground(() => {
   const diagnosticLog = new DiagnosticLog();
   const filenameMetadata = new DownloadFilenameMetadataStore();
   const requestHeaderContexts = new RequestHeaderContextStore();
-  const filenameGate = new DownloadFilenameGate();
   const duplicateDownloadGuard = new DuplicateDownloadGuard();
 
   const storageService = new StorageService(createWxtStorageApi(wxtStorage));
@@ -204,13 +202,7 @@ export default defineBackground(() => {
   // ─── Orchestrator ───────────────────────────────────
   const orchestrator = new DownloadOrchestrator({
     downloads: {
-      cancel: async (id) => {
-        try {
-          await browser.downloads.cancel(id);
-        } finally {
-          filenameGate.release(id);
-        }
-      },
+      cancel: (id) => browser.downloads.cancel(id),
       erase: (query) => browser.downloads.erase(query).then(() => {}),
     },
     cookies: {
@@ -313,19 +305,6 @@ export default defineBackground(() => {
     },
   });
 
-  type DeterminingFilenameItem = {
-    id: number;
-    url: string;
-    finalUrl?: string;
-    filename?: string;
-  };
-  type DownloadsWithDeterminingFilename = typeof browser.downloads & {
-    onDeterminingFilename?: {
-      addListener: (
-        callback: (item: DeterminingFilenameItem, suggest: SuggestedFilename) => true | void,
-      ) => void;
-    };
-  };
   type WebRequestHeader = { name?: string; value?: string };
   type WebRequestHeadersDetails = { url: string; responseHeaders?: WebRequestHeader[] };
   type WebRequestBeforeSendHeadersDetails = { url: string; requestHeaders?: WebRequestHeader[] };
@@ -441,16 +420,11 @@ export default defineBackground(() => {
   }
 
   function registerFilenameMetadataListeners(): void {
-    const downloads = browser.downloads as DownloadsWithDeterminingFilename;
-    downloads.onDeterminingFilename?.addListener((item, suggest) => {
-      filenameMetadata.rememberDeterminedFilename(item);
-      return filenameGate.hold(item.id, suggest);
-    });
-
     const browserWithWebRequest = browser as typeof browser & { webRequest?: WebRequestApi };
     try {
       browserWithWebRequest.webRequest?.onHeadersReceived?.addListener(
         (details): undefined => {
+          if (!settings.enabled || !settings.interceptionScope.browserDownloads) return undefined;
           const contentDisposition = details.responseHeaders?.find(
             (header) => header.name?.toLowerCase() === 'content-disposition',
           )?.value;
@@ -479,11 +453,9 @@ export default defineBackground(() => {
   // Pattern: detect → filter → cancel + erase → route to desktop.
   //
   // Why not onDeterminingFilename (Chrome-only)?
-  // Chrome skips onDeterminingFilename for navigation-to-download conversions
-  // when <a target="_blank"> has non-ASCII characters in href (issue #21).
-  // onCreated is the industry-standard interception mechanism used by
-  // NeatDownloadManager, Free Download Manager, and other MV3 extensions.
-  // It fires reliably for every download regardless of how it was initiated.
+  // Registering that listener makes Chromium ignore filenames supplied by
+  // other extensions through downloads.download({ filename }). onCreated keeps
+  // interception reliable without breaking other download managers.
 
   browser.downloads.onCreated.addListener((item) => {
     void (async () => {
@@ -535,8 +507,6 @@ export default defineBackground(() => {
             filename: item.filename ?? '',
           },
         );
-      } finally {
-        filenameGate.release(item.id);
       }
     })();
   });

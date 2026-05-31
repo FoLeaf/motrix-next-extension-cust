@@ -3,7 +3,7 @@ import sanitizeFilename from 'sanitize-filename';
 
 export const UNRESOLVED_FILENAME = 'unresolved-filename';
 
-export type FilenameSource = 'determining-filename' | 'content-disposition';
+export type FilenameSource = 'content-disposition';
 
 export interface FilenameMetadata {
   filename: string;
@@ -11,10 +11,8 @@ export interface FilenameMetadata {
 }
 
 export interface FilenameMetadataDownloadItem {
-  id: number;
   url: string;
   finalUrl?: string;
-  filename?: string;
 }
 
 interface MetadataEntry extends FilenameMetadata {
@@ -65,17 +63,12 @@ function canonicalUrl(url: string): string {
 }
 
 export class DownloadFilenameMetadataStore {
-  private readonly byDownloadId = new Map<number, MetadataEntry>();
   private readonly byUrl = new Map<string, MetadataEntry>();
 
   constructor(
     private readonly now: () => number = () => Date.now(),
     private readonly ttlMs: number = DEFAULT_TTL_MS,
   ) {}
-
-  rememberDeterminedFilename(item: FilenameMetadataDownloadItem): void {
-    this.rememberForDownload(item, item.filename ?? '', 'determining-filename');
-  }
 
   rememberContentDisposition(url: string, header: string): void {
     const filename = extractFilenameFromContentDisposition(header);
@@ -101,49 +94,15 @@ export class DownloadFilenameMetadataStore {
     }
   }
 
-  private rememberForDownload(
-    item: FilenameMetadataDownloadItem,
-    filename: string,
-    source: FilenameSource,
-  ): void {
-    if (!isUsableFilename(filename)) return;
-    const entry: MetadataEntry = {
-      filename: normalizeFilename(filename),
-      source,
-      createdAt: this.now(),
-    };
-    this.byDownloadId.set(item.id, entry);
-    this.rememberUrl(canonicalUrl(item.finalUrl || item.url), entry);
-    this.rememberUrl(canonicalUrl(item.url), entry);
-    this.prune();
-  }
-
   private find(item: FilenameMetadataDownloadItem): MetadataEntry | undefined {
     this.prune();
     const byFinalUrl = this.byUrl.get(canonicalUrl(item.finalUrl || item.url));
     const byOriginalUrl = this.byUrl.get(canonicalUrl(item.url));
-    const byDownloadId = this.byDownloadId.get(item.id);
-    return (
-      [byFinalUrl, byOriginalUrl].find((entry) => entry?.source === 'content-disposition') ??
-      byDownloadId ??
-      byFinalUrl ??
-      byOriginalUrl
-    );
-  }
-
-  private rememberUrl(url: string, entry: MetadataEntry): void {
-    const existing = this.byUrl.get(url);
-    if (existing?.source === 'content-disposition' && entry.source !== 'content-disposition') {
-      return;
-    }
-    this.byUrl.set(url, entry);
+    return byFinalUrl ?? byOriginalUrl;
   }
 
   private prune(): void {
     const cutoff = this.now() - this.ttlMs;
-    for (const [id, entry] of this.byDownloadId) {
-      if (entry.createdAt < cutoff) this.byDownloadId.delete(id);
-    }
     for (const [url, entry] of this.byUrl) {
       if (entry.createdAt < cutoff) this.byUrl.delete(url);
     }
