@@ -41,6 +41,7 @@ import {
 import { useTheme } from '@/shared/use-theme';
 import { getBootstrappedUiPrefs } from '@/shared/theme-bootstrap';
 import { usePreferenceForm } from '@/shared/use-preference-form';
+import { resolveBrowserCapabilities } from '@/shared/browser-capabilities';
 
 import { useSiteRules } from './composables/use-site-rules';
 import { useConnectionTest } from './composables/use-connection-test';
@@ -80,6 +81,7 @@ function i18nBilingual(key: string, enFallback: string): string {
 // ─── Navigation ─────────────────────────────────────────────────────
 
 const activeSection = ref('connection');
+const browserCapabilities = resolveBrowserCapabilities(import.meta.env.BROWSER);
 
 // ─── StorageService ──────────────────────────────────────────────────
 
@@ -160,7 +162,7 @@ const {
       secret: f.secret,
     });
     await storageService.updateSettings({
-      hideDownloadBar: f.hideDownloadBar,
+      hideDownloadBar: browserCapabilities.canControlDownloadUi ? f.hideDownloadBar : false,
       autoLaunchApp: f.autoLaunchApp,
       forwardRequestHeaders: f.forwardRequestHeaders,
       forwardCookies: f.forwardCookies,
@@ -217,6 +219,11 @@ function handleDuplicateGuardChange(value: Partial<DuplicateDownloadGuardSetting
 }
 
 async function handleHideDownloadBarChange(value: boolean): Promise<void> {
+  if (!browserCapabilities.canControlDownloadUi) {
+    form.value.hideDownloadBar = false;
+    return;
+  }
+
   if (!value) {
     form.value.hideDownloadBar = false;
     return;
@@ -288,6 +295,7 @@ async function loadFromStorage(): Promise<void> {
   form.value.minimumFileSize = data.settings.minimumFileSize;
   form.value.duplicateGuard = data.settings.duplicateGuard;
   form.value.hideDownloadBar =
+    browserCapabilities.canControlDownloadUi &&
     data.settings.hideDownloadBar &&
     (await permissionService.hasDownloadUiAccess().catch(() => false));
   form.value.autoLaunchApp = data.settings.autoLaunchApp;
@@ -318,7 +326,9 @@ async function applySettingsStorageChange(value: unknown): Promise<void> {
 
   form.value.minimumFileSize = settings.minimumFileSize;
   form.value.hideDownloadBar =
-    settings.hideDownloadBar && (await permissionService.hasDownloadUiAccess().catch(() => false));
+    browserCapabilities.canControlDownloadUi &&
+    settings.hideDownloadBar &&
+    (await permissionService.hasDownloadUiAccess().catch(() => false));
   form.value.autoLaunchApp = settings.autoLaunchApp;
   form.value.forwardRequestHeaders = settings.forwardRequestHeaders;
   form.value.forwardCookies =
@@ -489,6 +499,7 @@ onUnmounted(() => {
                   :enabled="interceptionEnabled"
                   :interception-scope="interceptionScope"
                   :hide-download-bar="form.hideDownloadBar"
+                  :can-control-download-ui="browserCapabilities.canControlDownloadUi"
                   :auto-launch-app="form.autoLaunchApp"
                   :forward-request-headers="form.forwardRequestHeaders"
                   :forward-cookies="form.forwardCookies"

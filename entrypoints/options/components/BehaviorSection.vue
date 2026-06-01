@@ -13,6 +13,7 @@ defineProps<{
   enabled: boolean;
   interceptionScope: InterceptionScope;
   hideDownloadBar: boolean;
+  canControlDownloadUi: boolean;
   autoLaunchApp: boolean;
   forwardRequestHeaders: boolean;
   forwardCookies: boolean;
@@ -128,6 +129,7 @@ const { t: i18n } = useI18n();
       </h3>
 
       <NFormItem
+        v-if="canControlDownloadUi"
         class="settings-row"
         :show-feedback="false"
         :label="i18n('options_hide_download_bar_label', 'Hide Browser Download Bar')"
