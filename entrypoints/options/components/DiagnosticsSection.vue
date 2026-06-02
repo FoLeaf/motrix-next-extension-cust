@@ -7,9 +7,9 @@
  * details, and export/copy/clear actions. Uses Naive UI components
  * and Vue TransitionGroup for animated list operations.
  */
-import { ref, computed } from 'vue';
+import { ref, computed, onUnmounted } from 'vue';
 import { NButton, NIcon, NTag, NEmpty, NBadge } from 'naive-ui';
-import { TrashOutline, DownloadOutline } from '@vicons/ionicons5';
+import { TrashOutline, DownloadOutline, RefreshOutline } from '@vicons/ionicons5';
 import type { DiagnosticEvent } from '@/shared/types';
 
 const props = defineProps<{
@@ -19,6 +19,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   clear: [];
   export: [];
+  resetSettings: [];
 }>();
 
 import { useI18n } from '@/shared/i18n/engine';
@@ -26,6 +27,30 @@ import { useI18n } from '@/shared/i18n/engine';
 const { t: i18n } = useI18n();
 
 const expandedId = ref<string | null>(null);
+const confirmingReset = ref(false);
+let resetConfirmTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearResetConfirmTimer(): void {
+  if (resetConfirmTimer) {
+    clearTimeout(resetConfirmTimer);
+    resetConfirmTimer = null;
+  }
+}
+
+function handleResetClick(): void {
+  if (confirmingReset.value) {
+    clearResetConfirmTimer();
+    confirmingReset.value = false;
+    emit('resetSettings');
+    return;
+  }
+
+  confirmingReset.value = true;
+  resetConfirmTimer = setTimeout(() => {
+    confirmingReset.value = false;
+    resetConfirmTimer = null;
+  }, 4000);
+}
 
 function toggleExpand(id: string): void {
   expandedId.value = expandedId.value === id ? null : id;
@@ -47,6 +72,8 @@ const LEVEL_TYPE: Record<string, 'success' | 'warning' | 'error'> = {
   warn: 'warning',
   error: 'error',
 };
+
+onUnmounted(clearResetConfirmTimer);
 </script>
 
 <template>
@@ -111,6 +138,29 @@ const LEVEL_TYPE: Record<string, 'success' | 'warning' | 'error'> = {
         :description="i18n('options_diagnostics_empty', 'No diagnostic events.')"
       />
     </Transition>
+
+    <section class="factory-reset">
+      <div>
+        <h3 class="factory-reset__title">
+          {{ i18n('options_factory_reset_title', 'Reset') }}
+        </h3>
+      </div>
+      <NButton
+        class="factory-reset__button"
+        size="small"
+        :type="confirmingReset ? 'error' : 'default'"
+        @click="handleResetClick"
+      >
+        <template #icon>
+          <NIcon :size="14"><RefreshOutline /></NIcon>
+        </template>
+        {{
+          confirmingReset
+            ? i18n('options_factory_reset_confirm', 'Click Again to Reset')
+            : i18n('options_factory_reset_button', 'Reset Settings')
+        }}
+      </NButton>
+    </section>
   </div>
 </template>
 
@@ -235,5 +285,32 @@ const LEVEL_TYPE: Record<string, 'success' | 'warning' | 'error'> = {
 .context-expand-leave-from {
   opacity: 1;
   max-height: 200px;
+}
+
+.factory-reset {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-outline-variant);
+}
+
+.factory-reset__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.factory-reset__button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .factory-reset {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 </style>

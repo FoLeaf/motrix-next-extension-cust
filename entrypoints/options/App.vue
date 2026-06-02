@@ -8,10 +8,9 @@
  * and composable wiring.
  *
  * Persistence model:
- *   - Connection / Behavior settings: explicit Save via usePreferenceForm
- *   - Site Rules: immediate persist on add/remove (useSiteRules)
- *   - Theme: immediate persist + patchSnapshot (useAppearance)
- *   - Diagnostics: read-only / immediate persist on clear (useDiagnostics)
+ *   - Connection / Behavior / Rules settings: explicit Save via usePreferenceForm
+ *   - Theme, language, and diagnostics persist immediately unless a full reset
+ *     is staged, in which case Save / Discard applies to the full snapshot.
  */
 import { ref, provide, onMounted, onUnmounted, computed, watch } from 'vue';
 import { browser } from 'wxt/browser';
@@ -24,6 +23,7 @@ import {
   parseDownloadSettings,
   parseSiteRules,
   parseUiPrefs,
+  type StorageSnapshot,
 } from '@/lib/storage';
 import { PermissionService } from '@/lib/services';
 import type {
@@ -33,6 +33,8 @@ import type {
   FileExtensionRuleSettings,
   InterceptionScope,
   MinimumFileSizeSettings,
+  SiteRule,
+  UiPrefs,
 } from '@/shared/types';
 import {
   DEFAULT_CONNECTION_CONFIG,
@@ -107,6 +109,52 @@ const appearance = useAppearance(storageService, setTheme, (id) => {
   colorSchemeId.value = id;
 });
 
+function createDefaultStorageSnapshot(): StorageSnapshot {
+  return {
+    connection: { ...DEFAULT_CONNECTION_CONFIG },
+    settings: {
+      ...DEFAULT_DOWNLOAD_SETTINGS,
+      duplicateGuard: { ...DEFAULT_DOWNLOAD_SETTINGS.duplicateGuard },
+      minimumFileSize: { ...DEFAULT_DOWNLOAD_SETTINGS.minimumFileSize },
+      fileExtensionRule: {
+        ...DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule,
+        extensions: [...DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.extensions],
+      },
+      interceptionScope: { ...DEFAULT_DOWNLOAD_SETTINGS.interceptionScope },
+    },
+    siteRules: [],
+    uiPrefs: { ...DEFAULT_UI_PREFS },
+    diagnosticLog: [],
+  };
+}
+
+function createStorageSnapshotFromState(formState: SettingsForm): StorageSnapshot {
+  return {
+    connection: {
+      port: formState.port,
+      secret: formState.secret,
+    },
+    settings: {
+      enabled: interceptionEnabled.value,
+      hideDownloadBar: browserCapabilities.canControlDownloadUi ? formState.hideDownloadBar : false,
+      autoLaunchApp: formState.autoLaunchApp,
+      forwardRequestHeaders: formState.forwardRequestHeaders,
+      forwardCookies: formState.forwardCookies,
+      duplicateGuard: formState.duplicateGuard,
+      minimumFileSize: formState.minimumFileSize,
+      fileExtensionRule: formState.fileExtensionRule,
+      interceptionScope: interceptionScope.value,
+    },
+    siteRules: siteRules.value,
+    uiPrefs: {
+      theme: appearance.uiTheme.value,
+      colorScheme: appearance.uiColorScheme.value,
+      locale: appearance.uiLocale.value,
+    },
+    diagnosticLog: diagnosticEvents.value,
+  };
+}
+
 // ─── Preference Form (dirty-tracked settings) ──────────────────────
 
 interface SettingsForm {
@@ -125,6 +173,7 @@ const interceptionEnabled = ref(DEFAULT_DOWNLOAD_SETTINGS.enabled);
 const interceptionScope = ref<InterceptionScope>({
   ...DEFAULT_DOWNLOAD_SETTINGS.interceptionScope,
 });
+const factoryResetPending = ref(false);
 function buildForm(): SettingsForm {
   return {
     port: DEFAULT_CONNECTION_CONFIG.port,
@@ -160,6 +209,12 @@ const {
 } = usePreferenceForm<SettingsForm>({
   buildForm,
   persist: async (f) => {
+    if (factoryResetPending.value) {
+      await storageService.saveSnapshot(createStorageSnapshotFromState(f));
+      factoryResetPending.value = false;
+      return;
+    }
+
     await storageService.updateConnectionConfig({
       port: f.port,
       secret: f.secret,
@@ -178,6 +233,7 @@ const {
     toast.success(i18n('options_save_success', 'Settings saved'));
   },
 });
+const hasPendingChanges = computed(() => isDirty.value || factoryResetPending.value);
 
 async function handleSave(): Promise<void> {
   try {
@@ -188,13 +244,105 @@ async function handleSave(): Promise<void> {
 }
 
 function handleReset(): void {
-  rawReset();
+  if (factoryResetPending.value) {
+    factoryResetPending.value = false;
+    void loadFromStorage().then(() => appearance.applyTheme());
+  } else {
+    rawReset();
+  }
   toast.info(i18n('options_discard_success', 'Changes restored'));
+}
+
+function stageFactoryReset(): void {
+  const defaults = createDefaultStorageSnapshot();
+
+  form.value.port = defaults.connection.port;
+  form.value.secret = defaults.connection.secret;
+  interceptionEnabled.value = defaults.settings.enabled;
+  interceptionScope.value = defaults.settings.interceptionScope;
+  form.value.hideDownloadBar = defaults.settings.hideDownloadBar;
+  form.value.autoLaunchApp = defaults.settings.autoLaunchApp;
+  form.value.forwardRequestHeaders = defaults.settings.forwardRequestHeaders;
+  form.value.forwardCookies = defaults.settings.forwardCookies;
+  form.value.duplicateGuard = defaults.settings.duplicateGuard;
+  form.value.minimumFileSize = defaults.settings.minimumFileSize;
+  form.value.fileExtensionRule = defaults.settings.fileExtensionRule;
+
+  appearance.hydrate(defaults.uiPrefs);
+  i18nCtx.setLocale(defaults.uiPrefs.locale);
+  hydrateSiteRules(defaults.siteRules);
+  hydrateDiagnostics(defaults.diagnosticLog);
+  appearance.applyTheme();
+
+  factoryResetPending.value = true;
+  toast.info(i18n('options_factory_reset_ready', 'Defaults ready to save'));
+}
+
+function handleThemeChange(value: string): void {
+  if (!factoryResetPending.value) {
+    appearance.handleThemeChange(value);
+    return;
+  }
+
+  appearance.hydrate({ theme: value as UiPrefs['theme'] });
+  appearance.applyTheme();
+}
+
+function handleColorSchemeChange(value: string): void {
+  if (!factoryResetPending.value) {
+    appearance.handleColorSchemeChange(value);
+    return;
+  }
+
+  appearance.hydrate({ colorScheme: value });
+}
+
+function handleLocaleChange(value: string): void {
+  if (!factoryResetPending.value) {
+    i18nSetLocale(value);
+    appearance.handleLocaleChange(value);
+    return;
+  }
+
+  i18nSetLocale(value);
+  appearance.hydrate({ locale: value });
+}
+
+function handleAddSiteRule(rule: Omit<SiteRule, 'id'>): void {
+  if (!factoryResetPending.value) {
+    addRule(rule);
+    return;
+  }
+
+  siteRules.value.push({
+    id: `rule-${Date.now()}`,
+    pattern: rule.pattern,
+    action: rule.action,
+  });
+}
+
+function handleRemoveSiteRule(id: string): void {
+  if (!factoryResetPending.value) {
+    removeRule(id);
+    return;
+  }
+
+  siteRules.value = siteRules.value.filter((rule) => rule.id !== id);
+}
+
+function handleClearDiagnosticLog(): void {
+  if (!factoryResetPending.value) {
+    clearDiagnosticLog();
+    return;
+  }
+
+  hydrateDiagnostics([]);
 }
 
 async function handleEnabledChange(value: boolean): Promise<void> {
   const previous = interceptionEnabled.value;
   interceptionEnabled.value = value;
+  if (factoryResetPending.value) return;
   try {
     await storageService.updateSettings({ enabled: value });
   } catch {
@@ -206,6 +354,7 @@ async function handleEnabledChange(value: boolean): Promise<void> {
 async function handleInterceptionScopeChange(value: Partial<InterceptionScope>): Promise<void> {
   const previous = { ...interceptionScope.value };
   interceptionScope.value = { ...interceptionScope.value, ...value };
+  if (factoryResetPending.value) return;
   try {
     await storageService.updateSettings({ interceptionScope: interceptionScope.value });
   } catch {
@@ -357,12 +506,12 @@ function applyUiPrefsStorageChange(value: unknown): void {
 // ─── Lifecycle ──────────────────────────────────────────────────────
 
 function onBeforeUnload(e: globalThis.BeforeUnloadEvent): void {
-  if (isDirty.value) {
+  if (hasPendingChanges.value) {
     e.preventDefault();
   }
 }
 
-watch(isDirty, (dirty) => {
+watch(hasPendingChanges, (dirty) => {
   if (dirty) {
     window.addEventListener('beforeunload', onBeforeUnload);
   } else {
@@ -382,6 +531,7 @@ function bindThemeMediaChanges(): void {
 function bindStorageChanges(): void {
   const handleStorageChange: StorageChangeListener = (changes, area) => {
     if (area !== 'local') return;
+    if (factoryResetPending.value) return;
 
     if (changes.connection?.newValue && !isDirty.value) {
       applyConnectionStorageChange(changes.connection.newValue);
@@ -495,7 +645,6 @@ onUnmounted(() => {
                   @update:secret="form.secret = $event"
                   @test="testConnection"
                 />
-                <SettingsActionBar :is-dirty="isDirty" @save="handleSave" @discard="handleReset" />
               </div>
             </div>
 
@@ -520,7 +669,6 @@ onUnmounted(() => {
                   @update:forward-request-headers="form.forwardRequestHeaders = $event"
                   @update:forward-cookies="handleForwardCookiesChange"
                 />
-                <SettingsActionBar :is-dirty="isDirty" @save="handleSave" @discard="handleReset" />
               </div>
             </div>
 
@@ -536,10 +684,9 @@ onUnmounted(() => {
                   @update:duplicate-guard="handleDuplicateGuardChange"
                   @update:minimum-file-size="handleMinimumFileSizeChange"
                   @update:file-extension-rule="handleFileExtensionRuleChange"
-                  @add-site-rule="addRule"
-                  @remove-site-rule="removeRule"
+                  @add-site-rule="handleAddSiteRule"
+                  @remove-site-rule="handleRemoveSiteRule"
                 />
-                <SettingsActionBar :is-dirty="isDirty" @save="handleSave" @discard="handleReset" />
               </div>
             </div>
 
@@ -554,8 +701,8 @@ onUnmounted(() => {
                 <AppearanceSection
                   :theme="appearance.uiTheme.value"
                   :color-scheme="appearance.uiColorScheme.value"
-                  @update:theme="appearance.handleThemeChange"
-                  @update:color-scheme="appearance.handleColorSchemeChange"
+                  @update:theme="handleThemeChange"
+                  @update:color-scheme="handleColorSchemeChange"
                 />
               </div>
             </div>
@@ -568,12 +715,7 @@ onUnmounted(() => {
               <div class="card">
                 <LanguageSection
                   :locale="i18nCtx.locale.value"
-                  @update:locale="
-                    (v: string) => {
-                      i18nSetLocale(v);
-                      appearance.handleLocaleChange(v);
-                    }
-                  "
+                  @update:locale="handleLocaleChange"
                 />
               </div>
             </div>
@@ -590,12 +732,18 @@ onUnmounted(() => {
               <div class="card">
                 <DiagnosticsSection
                   :events="diagnosticEvents"
-                  @clear="clearDiagnosticLog"
+                  @clear="handleClearDiagnosticLog"
                   @export="exportDiagnosticReport"
+                  @reset-settings="stageFactoryReset"
                 />
               </div>
             </div>
           </Transition>
+          <SettingsActionBar
+            :is-dirty="hasPendingChanges"
+            @save="handleSave"
+            @discard="handleReset"
+          />
         </main>
       </div>
 

@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "Böngésző használata",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "Visszaállítás",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "Beállítások visszaállítása",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "Kattintson újra a visszaállításhoz",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "Az alapértékek mentésre készek",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

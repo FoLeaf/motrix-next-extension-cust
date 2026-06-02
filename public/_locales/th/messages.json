@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "ใช้เบราว์เซอร์",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "รีเซ็ต",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "รีเซ็ตการตั้งค่า",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "คลิกอีกครั้งเพื่อรีเซ็ต",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "ค่าเริ่มต้นพร้อมบันทึกแล้ว",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

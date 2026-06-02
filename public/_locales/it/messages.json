@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "Usa browser",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "Ripristina",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "Ripristina impostazioni",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "Fai di nuovo clic per ripristinare",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "Valori predefiniti pronti da salvare",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

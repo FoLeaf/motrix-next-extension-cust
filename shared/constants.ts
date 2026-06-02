@@ -16,7 +16,7 @@ export const DEFAULT_DOWNLOAD_SETTINGS: Readonly<DownloadSettings> = {
     windowSeconds: 10,
   },
   minimumFileSize: {
-    enabled: true,
+    enabled: false,
     sizeMb: 5,
     unknownSizeAction: 'intercept',
   },

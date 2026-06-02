@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "Usa el navegador",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "Restableix",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "Restableix els paràmetres",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "Fes clic de nou per restablir",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "Valors per defecte preparats per desar",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

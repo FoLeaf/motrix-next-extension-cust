@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "使用浏览器",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "重置",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "恢复默认设置",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "再次点击恢复",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "默认值待保存",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

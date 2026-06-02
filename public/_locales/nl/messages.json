@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "Browser gebruiken",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "Resetten",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "Instellingen resetten",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "Klik opnieuw om te resetten",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "Standaardwaarden klaar om op te slaan",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

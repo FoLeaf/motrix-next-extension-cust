@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ref } from 'vue';
 import { StorageService } from '@/lib/storage/storage-service';
+import {
+  DEFAULT_CONNECTION_CONFIG,
+  DEFAULT_DOWNLOAD_SETTINGS,
+  DEFAULT_UI_PREFS,
+} from '@/shared/constants';
 
 // ─── Mock Storage API ───────────────────────────────────
 
@@ -317,5 +322,36 @@ describe('StorageService.saveDiagnosticLog', () => {
     await service.saveDiagnosticLog(events);
 
     expect(api.set).toHaveBeenCalledWith({ diagnosticLog: events });
+  });
+});
+
+// ─── saveSnapshot() ─────────────────────────────────────
+
+describe('StorageService.saveSnapshot', () => {
+  it('persists the full storage snapshot with cloneable values', async () => {
+    const api = createMockApi({});
+    const service = new StorageService(api);
+    const snapshot = ref({
+      connection: { ...DEFAULT_CONNECTION_CONFIG },
+      settings: {
+        ...DEFAULT_DOWNLOAD_SETTINGS,
+        duplicateGuard: { ...DEFAULT_DOWNLOAD_SETTINGS.duplicateGuard },
+        minimumFileSize: { ...DEFAULT_DOWNLOAD_SETTINGS.minimumFileSize },
+        fileExtensionRule: {
+          ...DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule,
+          extensions: [...DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.extensions],
+        },
+        interceptionScope: { ...DEFAULT_DOWNLOAD_SETTINGS.interceptionScope },
+      },
+      siteRules: [],
+      uiPrefs: { ...DEFAULT_UI_PREFS },
+      diagnosticLog: [],
+    });
+
+    await service.saveSnapshot(snapshot.value);
+
+    const payload = api.set.mock.calls[0]?.[0];
+    expect(() => structuredClone(payload)).not.toThrow();
+    expect(payload).toEqual(snapshot.value);
   });
 });

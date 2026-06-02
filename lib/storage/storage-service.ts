@@ -27,6 +27,14 @@ export interface StorageApi {
   set: (items: Record<string, unknown>) => Promise<void>;
 }
 
+export interface StorageSnapshot {
+  connection: ConnectionConfig;
+  settings: DownloadSettings;
+  siteRules: SiteRule[];
+  uiPrefs: UiPrefs;
+  diagnosticLog: DiagnosticEvent[];
+}
+
 function toStorageValue<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map((item) => toStorageValue(item)) as T;
@@ -96,5 +104,16 @@ export class StorageService {
   /** Persist diagnostic event log. */
   async saveDiagnosticLog(events: DiagnosticEvent[]): Promise<void> {
     await this.api.set({ diagnosticLog: toStorageValue(events) });
+  }
+
+  /** Persist the complete user-visible storage snapshot. */
+  async saveSnapshot(snapshot: StorageSnapshot): Promise<void> {
+    await this.api.set({
+      connection: toStorageValue(snapshot.connection),
+      settings: toStorageValue(snapshot.settings),
+      siteRules: toStorageValue(snapshot.siteRules),
+      uiPrefs: toStorageValue(snapshot.uiPrefs),
+      diagnosticLog: toStorageValue(snapshot.diagnosticLog),
+    });
   }
 }

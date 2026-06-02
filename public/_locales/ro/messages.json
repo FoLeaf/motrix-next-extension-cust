@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "Folosește browserul",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "Resetare",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "Resetează setările",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "Apasă din nou pentru resetare",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "Valorile implicite sunt gata de salvat",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

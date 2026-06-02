@@ -507,5 +507,21 @@
   "options_file_extension_action_skip": {
     "message": "Використати браузер",
     "description": "Option label for leaving a matched extension in the browser."
+  },
+  "options_factory_reset_title": {
+    "message": "Скидання",
+    "description": "Factory reset section title."
+  },
+  "options_factory_reset_button": {
+    "message": "Скинути налаштування",
+    "description": "Button to stage a full settings reset."
+  },
+  "options_factory_reset_confirm": {
+    "message": "Натисніть ще раз, щоб скинути",
+    "description": "Second-click confirmation label for the reset button."
+  },
+  "options_factory_reset_ready": {
+    "message": "Типові значення готові до збереження",
+    "description": "Toast shown after default settings are staged for saving."
   }
 }

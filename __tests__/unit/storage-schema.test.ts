@@ -105,7 +105,7 @@ describe('parseDownloadSettings', () => {
         windowSeconds: 10,
       },
       minimumFileSize: {
-        enabled: true,
+        enabled: false,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
@@ -137,7 +137,7 @@ describe('parseDownloadSettings', () => {
         windowSeconds: 10,
       },
       minimumFileSize: {
-        enabled: true,
+        enabled: false,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
@@ -187,7 +187,7 @@ describe('parseDownloadSettings', () => {
         windowSeconds: 10,
       },
       minimumFileSize: {
-        enabled: true,
+        enabled: false,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
@@ -346,7 +346,7 @@ describe('parseStorage', () => {
         windowSeconds: 10,
       },
       minimumFileSize: {
-        enabled: true,
+        enabled: false,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
@@ -393,7 +393,7 @@ describe('parseStorage', () => {
         windowSeconds: 10,
       },
       minimumFileSize: {
-        enabled: true,
+        enabled: false,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
@@ -444,7 +444,7 @@ describe('parseStorage', () => {
         windowSeconds: 10,
       },
       minimumFileSize: {
-        enabled: true,
+        enabled: false,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
