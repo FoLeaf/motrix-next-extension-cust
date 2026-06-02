@@ -475,5 +475,33 @@
   "options_site_rules_label": {
     "message": "Nettstedregler",
     "description": "Subsection label for per-site download rules."
+  },
+  "options_file_extension_rule_label": {
+    "message": "Filtypeendingsregel",
+    "description": "Label for the file extension rule toggle."
+  },
+  "options_file_extension_list_label": {
+    "message": "Endelser",
+    "description": "Label for the file extension list input."
+  },
+  "options_file_extension_list_placeholder": {
+    "message": "jpg, png, txt",
+    "description": "Placeholder for the file extension list input."
+  },
+  "options_file_extension_listed_action_label": {
+    "message": "Oppførte endelser",
+    "description": "Label for the action selector applied to listed file extensions."
+  },
+  "options_file_extension_unknown_action_label": {
+    "message": "Ukjent endelse",
+    "description": "Label for the action selector applied when no file extension is detected."
+  },
+  "options_file_extension_action_intercept": {
+    "message": "Send til Motrix Next",
+    "description": "Option label for routing a matched extension to Motrix Next."
+  },
+  "options_file_extension_action_skip": {
+    "message": "Bruk nettleser",
+    "description": "Option label for leaving a matched extension in the browser."
   }
 }

@@ -9,6 +9,7 @@ import {
   MimeTypeStage,
   InterceptionScopeStage,
   MinimumFileSizeStage,
+  FileExtensionRuleStage,
 } from '@/lib/download/filter';
 import type { FilterContext, DownloadSettings, SiteRule } from '@/shared/types';
 
@@ -28,6 +29,12 @@ const DEFAULT_SETTINGS: DownloadSettings = {
     enabled: false,
     sizeMb: 0,
     unknownSizeAction: 'intercept',
+  },
+  fileExtensionRule: {
+    enabled: false,
+    extensions: [],
+    listedAction: 'skip',
+    unknownAction: 'intercept',
   },
   interceptionScope: {
     browserDownloads: true,
@@ -428,6 +435,57 @@ describe('MinimumFileSizeStage', () => {
     };
 
     expect(stage.evaluate(ctx, settings)).toBe('skip');
+  });
+});
+
+// ─── File Extension Rule Stage ──────────────────────────
+
+describe('FileExtensionRuleStage', () => {
+  const stage = new FileExtensionRuleStage();
+  const enabledSettings: DownloadSettings = {
+    ...DEFAULT_SETTINGS,
+    fileExtensionRule: {
+      enabled: true,
+      extensions: ['jpg', 'tar.gz'],
+      listedAction: 'skip',
+      unknownAction: 'intercept',
+    },
+  };
+
+  it('uses the listed action when a configured extension matches', () => {
+    const ctx = createContext({ filename: 'photo.JPG' });
+
+    expect(stage.evaluate(ctx, enabledSettings)).toBe('skip');
+  });
+
+  it('supports compound extensions', () => {
+    const ctx = createContext({ filename: 'archive.tar.gz' });
+
+    expect(stage.evaluate(ctx, enabledSettings)).toBe('skip');
+  });
+
+  it('uses the unknown action when no extension can be detected', () => {
+    const ctx = createContext({
+      url: 'https://example.com/download',
+      finalUrl: 'https://example.com/download',
+      filename: 'download',
+    });
+
+    expect(
+      stage.evaluate(ctx, {
+        ...enabledSettings,
+        fileExtensionRule: {
+          ...enabledSettings.fileExtensionRule,
+          unknownAction: 'skip',
+        },
+      }),
+    ).toBe('skip');
+  });
+
+  it('does not decide when a known extension is not listed', () => {
+    const ctx = createContext({ filename: 'video.mp4' });
+
+    expect(stage.evaluate(ctx, enabledSettings)).toBeNull();
   });
 });
 

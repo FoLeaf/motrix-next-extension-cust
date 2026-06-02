@@ -475,5 +475,33 @@
   "options_site_rules_label": {
     "message": "Quy tac trang web",
     "description": "Subsection label for per-site download rules."
+  },
+  "options_file_extension_rule_label": {
+    "message": "Quy tắc đuôi tệp",
+    "description": "Label for the file extension rule toggle."
+  },
+  "options_file_extension_list_label": {
+    "message": "Đuôi tệp",
+    "description": "Label for the file extension list input."
+  },
+  "options_file_extension_list_placeholder": {
+    "message": "jpg, png, txt",
+    "description": "Placeholder for the file extension list input."
+  },
+  "options_file_extension_listed_action_label": {
+    "message": "Đuôi tệp đã liệt kê",
+    "description": "Label for the action selector applied to listed file extensions."
+  },
+  "options_file_extension_unknown_action_label": {
+    "message": "Đuôi tệp không rõ",
+    "description": "Label for the action selector applied when no file extension is detected."
+  },
+  "options_file_extension_action_intercept": {
+    "message": "Gửi đến Motrix Next",
+    "description": "Option label for routing a matched extension to Motrix Next."
+  },
+  "options_file_extension_action_skip": {
+    "message": "Dùng trình duyệt",
+    "description": "Option label for leaving a matched extension in the browser."
   }
 }

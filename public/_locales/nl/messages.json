@@ -475,5 +475,33 @@
   "options_site_rules_label": {
     "message": "Siteregels",
     "description": "Subsection label for per-site download rules."
+  },
+  "options_file_extension_rule_label": {
+    "message": "Bestandsextensieregel",
+    "description": "Label for the file extension rule toggle."
+  },
+  "options_file_extension_list_label": {
+    "message": "Extensies",
+    "description": "Label for the file extension list input."
+  },
+  "options_file_extension_list_placeholder": {
+    "message": "jpg, png, txt",
+    "description": "Placeholder for the file extension list input."
+  },
+  "options_file_extension_listed_action_label": {
+    "message": "Opgegeven extensies",
+    "description": "Label for the action selector applied to listed file extensions."
+  },
+  "options_file_extension_unknown_action_label": {
+    "message": "Onbekende extensie",
+    "description": "Label for the action selector applied when no file extension is detected."
+  },
+  "options_file_extension_action_intercept": {
+    "message": "Naar Motrix Next sturen",
+    "description": "Option label for routing a matched extension to Motrix Next."
+  },
+  "options_file_extension_action_skip": {
+    "message": "Browser gebruiken",
+    "description": "Option label for leaving a matched extension in the browser."
   }
 }

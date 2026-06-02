@@ -20,6 +20,12 @@ export const DEFAULT_DOWNLOAD_SETTINGS: Readonly<DownloadSettings> = {
     sizeMb: 5,
     unknownSizeAction: 'intercept',
   },
+  fileExtensionRule: {
+    enabled: false,
+    extensions: [],
+    listedAction: 'skip',
+    unknownAction: 'intercept',
+  },
   interceptionScope: {
     browserDownloads: true,
     magnet: true,

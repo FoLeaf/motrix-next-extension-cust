@@ -75,6 +75,12 @@ describe('parseDownloadSettings', () => {
         sizeMb: 5,
         unknownSizeAction: 'skip',
       },
+      fileExtensionRule: {
+        enabled: true,
+        extensions: ['jpg', 'tar.gz'],
+        listedAction: 'skip',
+        unknownAction: 'intercept',
+      },
       interceptionScope: {
         browserDownloads: false,
         magnet: true,
@@ -103,6 +109,12 @@ describe('parseDownloadSettings', () => {
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip',
+        unknownAction: 'intercept',
+      },
       interceptionScope: {
         browserDownloads: true,
         magnet: true,
@@ -128,6 +140,12 @@ describe('parseDownloadSettings', () => {
         enabled: true,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
+      },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip',
+        unknownAction: 'intercept',
       },
       interceptionScope: {
         browserDownloads: true,
@@ -173,6 +191,12 @@ describe('parseDownloadSettings', () => {
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip',
+        unknownAction: 'intercept',
+      },
       interceptionScope: {
         browserDownloads: true,
         magnet: true,
@@ -181,6 +205,24 @@ describe('parseDownloadSettings', () => {
       },
     });
     expect(result).not.toHaveProperty('unknown');
+  });
+
+  it('normalizes file extension rule values', () => {
+    const result = parseDownloadSettings({
+      fileExtensionRule: {
+        enabled: true,
+        extensions: ['.JPG', ' tar.gz ', '../bad', 'jpg'],
+        listedAction: 'intercept',
+        unknownAction: 'skip',
+      },
+    });
+
+    expect(result.fileExtensionRule).toEqual({
+      enabled: true,
+      extensions: ['jpg', 'tar.gz'],
+      listedAction: 'intercept',
+      unknownAction: 'skip',
+    });
   });
 });
 
@@ -308,6 +350,12 @@ describe('parseStorage', () => {
         sizeMb: 5,
         unknownSizeAction: 'intercept',
       },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip',
+        unknownAction: 'intercept',
+      },
       interceptionScope: {
         browserDownloads: true,
         magnet: true,
@@ -348,6 +396,12 @@ describe('parseStorage', () => {
         enabled: true,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
+      },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip',
+        unknownAction: 'intercept',
       },
       interceptionScope: {
         browserDownloads: true,
@@ -393,6 +447,12 @@ describe('parseStorage', () => {
         enabled: true,
         sizeMb: 5,
         unknownSizeAction: 'intercept',
+      },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip',
+        unknownAction: 'intercept',
       },
       interceptionScope: {
         browserDownloads: false,

@@ -475,5 +475,33 @@
   "options_site_rules_label": {
     "message": "قواعد المواقع",
     "description": "Subsection label for per-site download rules."
+  },
+  "options_file_extension_rule_label": {
+    "message": "قاعدة امتداد الملف",
+    "description": "Label for the file extension rule toggle."
+  },
+  "options_file_extension_list_label": {
+    "message": "الامتدادات",
+    "description": "Label for the file extension list input."
+  },
+  "options_file_extension_list_placeholder": {
+    "message": "jpg, png, txt",
+    "description": "Placeholder for the file extension list input."
+  },
+  "options_file_extension_listed_action_label": {
+    "message": "الامتدادات المدرجة",
+    "description": "Label for the action selector applied to listed file extensions."
+  },
+  "options_file_extension_unknown_action_label": {
+    "message": "امتداد غير معروف",
+    "description": "Label for the action selector applied when no file extension is detected."
+  },
+  "options_file_extension_action_intercept": {
+    "message": "إرسال إلى Motrix Next",
+    "description": "Option label for routing a matched extension to Motrix Next."
+  },
+  "options_file_extension_action_skip": {
+    "message": "استخدام المتصفح",
+    "description": "Option label for leaving a matched extension in the browser."
   }
 }

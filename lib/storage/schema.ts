@@ -28,6 +28,7 @@ import {
   DEFAULT_DOWNLOAD_SETTINGS,
   DEFAULT_UI_PREFS,
 } from '@/shared/constants';
+import { normalizeFileExtensionList } from '@/shared/file-extension-rule';
 
 // ─── Leaf Schemas ───────────────────────────────────────
 
@@ -80,6 +81,26 @@ const MinimumFileSizeSchema = z.object({
     .default(DEFAULT_DOWNLOAD_SETTINGS.minimumFileSize.unknownSizeAction),
 });
 
+const FileExtensionRuleActionSchema = z.enum(['intercept', 'skip']);
+
+const FileExtensionRuleSchema = z.object({
+  enabled: z
+    .boolean()
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.enabled)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.enabled),
+  extensions: z
+    .array(z.string())
+    .transform(normalizeFileExtensionList)
+    .catch(DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.extensions)
+    .default(DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.extensions),
+  listedAction: FileExtensionRuleActionSchema.catch(
+    DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.listedAction,
+  ).default(DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.listedAction),
+  unknownAction: FileExtensionRuleActionSchema.catch(
+    DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.unknownAction,
+  ).default(DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule.unknownAction),
+});
+
 const DuplicateDownloadGuardSchema = z.object({
   enabled: z
     .boolean()
@@ -121,6 +142,9 @@ const DownloadSettingsSchema = z.object({
   minimumFileSize: MinimumFileSizeSchema.catch(DEFAULT_DOWNLOAD_SETTINGS.minimumFileSize).default(
     DEFAULT_DOWNLOAD_SETTINGS.minimumFileSize,
   ),
+  fileExtensionRule: FileExtensionRuleSchema.catch(
+    DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule,
+  ).default(DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule),
   interceptionScope: InterceptionScopeSchema.catch(
     DEFAULT_DOWNLOAD_SETTINGS.interceptionScope,
   ).default(DEFAULT_DOWNLOAD_SETTINGS.interceptionScope),

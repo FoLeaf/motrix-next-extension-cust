@@ -475,5 +475,33 @@
   "options_site_rules_label": {
     "message": "站点规则",
     "description": "Subsection label for per-site download rules."
+  },
+  "options_file_extension_rule_label": {
+    "message": "文件后缀规则",
+    "description": "Label for the file extension rule toggle."
+  },
+  "options_file_extension_list_label": {
+    "message": "后缀名",
+    "description": "Label for the file extension list input."
+  },
+  "options_file_extension_list_placeholder": {
+    "message": "jpg, png, txt",
+    "description": "Placeholder for the file extension list input."
+  },
+  "options_file_extension_listed_action_label": {
+    "message": "指定后缀",
+    "description": "Label for the action selector applied to listed file extensions."
+  },
+  "options_file_extension_unknown_action_label": {
+    "message": "未知后缀",
+    "description": "Label for the action selector applied when no file extension is detected."
+  },
+  "options_file_extension_action_intercept": {
+    "message": "移交 Motrix Next",
+    "description": "Option label for routing a matched extension to Motrix Next."
+  },
+  "options_file_extension_action_skip": {
+    "message": "使用浏览器",
+    "description": "Option label for leaving a matched extension in the browser."
   }
 }

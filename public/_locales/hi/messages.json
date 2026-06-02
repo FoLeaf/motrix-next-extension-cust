@@ -475,5 +475,33 @@
   "options_site_rules_label": {
     "message": "साइट नियम",
     "description": "Subsection label for per-site download rules."
+  },
+  "options_file_extension_rule_label": {
+    "message": "फ़ाइल एक्सटेंशन नियम",
+    "description": "Label for the file extension rule toggle."
+  },
+  "options_file_extension_list_label": {
+    "message": "एक्सटेंशन",
+    "description": "Label for the file extension list input."
+  },
+  "options_file_extension_list_placeholder": {
+    "message": "jpg, png, txt",
+    "description": "Placeholder for the file extension list input."
+  },
+  "options_file_extension_listed_action_label": {
+    "message": "सूचीबद्ध एक्सटेंशन",
+    "description": "Label for the action selector applied to listed file extensions."
+  },
+  "options_file_extension_unknown_action_label": {
+    "message": "अज्ञात एक्सटेंशन",
+    "description": "Label for the action selector applied when no file extension is detected."
+  },
+  "options_file_extension_action_intercept": {
+    "message": "Motrix Next को भेजें",
+    "description": "Option label for routing a matched extension to Motrix Next."
+  },
+  "options_file_extension_action_skip": {
+    "message": "ब्राउज़र का उपयोग करें",
+    "description": "Option label for leaving a matched extension in the browser."
   }
 }

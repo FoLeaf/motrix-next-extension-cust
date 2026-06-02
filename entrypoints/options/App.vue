@@ -30,6 +30,7 @@ import type {
   ConnectionConfig,
   DuplicateDownloadGuardSettings,
   DiagnosticEvent,
+  FileExtensionRuleSettings,
   InterceptionScope,
   MinimumFileSizeSettings,
 } from '@/shared/types';
@@ -117,6 +118,7 @@ interface SettingsForm {
   forwardCookies: boolean;
   duplicateGuard: DuplicateDownloadGuardSettings;
   minimumFileSize: MinimumFileSizeSettings;
+  fileExtensionRule: FileExtensionRuleSettings;
 }
 
 const interceptionEnabled = ref(DEFAULT_DOWNLOAD_SETTINGS.enabled);
@@ -133,6 +135,7 @@ function buildForm(): SettingsForm {
     forwardCookies: DEFAULT_DOWNLOAD_SETTINGS.forwardCookies,
     duplicateGuard: { ...DEFAULT_DOWNLOAD_SETTINGS.duplicateGuard },
     minimumFileSize: { ...DEFAULT_DOWNLOAD_SETTINGS.minimumFileSize },
+    fileExtensionRule: { ...DEFAULT_DOWNLOAD_SETTINGS.fileExtensionRule },
   };
 }
 
@@ -168,6 +171,7 @@ const {
       forwardCookies: f.forwardCookies,
       duplicateGuard: f.duplicateGuard,
       minimumFileSize: f.minimumFileSize,
+      fileExtensionRule: f.fileExtensionRule,
     });
   },
   afterSave: () => {
@@ -212,6 +216,10 @@ async function handleInterceptionScopeChange(value: Partial<InterceptionScope>):
 
 function handleMinimumFileSizeChange(value: Partial<MinimumFileSizeSettings>): void {
   form.value.minimumFileSize = { ...form.value.minimumFileSize, ...value };
+}
+
+function handleFileExtensionRuleChange(value: Partial<FileExtensionRuleSettings>): void {
+  form.value.fileExtensionRule = { ...form.value.fileExtensionRule, ...value };
 }
 
 function handleDuplicateGuardChange(value: Partial<DuplicateDownloadGuardSettings>): void {
@@ -293,6 +301,7 @@ async function loadFromStorage(): Promise<void> {
   interceptionEnabled.value = data.settings.enabled;
   interceptionScope.value = data.settings.interceptionScope;
   form.value.minimumFileSize = data.settings.minimumFileSize;
+  form.value.fileExtensionRule = data.settings.fileExtensionRule;
   form.value.duplicateGuard = data.settings.duplicateGuard;
   form.value.hideDownloadBar =
     browserCapabilities.canControlDownloadUi &&
@@ -325,6 +334,7 @@ async function applySettingsStorageChange(value: unknown): Promise<void> {
   if (isDirty.value) return;
 
   form.value.minimumFileSize = settings.minimumFileSize;
+  form.value.fileExtensionRule = settings.fileExtensionRule;
   form.value.hideDownloadBar =
     browserCapabilities.canControlDownloadUi &&
     settings.hideDownloadBar &&
@@ -521,9 +531,11 @@ onUnmounted(() => {
                 <RulesSection
                   :duplicate-guard="form.duplicateGuard"
                   :minimum-file-size="form.minimumFileSize"
+                  :file-extension-rule="form.fileExtensionRule"
                   :site-rules="siteRules"
                   @update:duplicate-guard="handleDuplicateGuardChange"
                   @update:minimum-file-size="handleMinimumFileSizeChange"
+                  @update:file-extension-rule="handleFileExtensionRuleChange"
                   @add-site-rule="addRule"
                   @remove-site-rule="removeRule"
                 />

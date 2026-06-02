@@ -126,6 +126,12 @@ describe('StorageService.saveSettings', () => {
         sizeMb: 5,
         unknownSizeAction: 'intercept' as const,
       },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip' as const,
+        unknownAction: 'intercept' as const,
+      },
       interceptionScope: {
         browserDownloads: true,
         magnet: true,
@@ -156,6 +162,12 @@ describe('StorageService.saveSettings', () => {
         enabled: true,
         sizeMb: 5,
         unknownSizeAction: 'intercept' as const,
+      },
+      fileExtensionRule: {
+        enabled: false,
+        extensions: [],
+        listedAction: 'skip' as const,
+        unknownAction: 'intercept' as const,
       },
       interceptionScope: {
         browserDownloads: true,
@@ -193,6 +205,12 @@ describe('StorageService.updateSettings', () => {
           sizeMb: 5,
           unknownSizeAction: 'skip',
         },
+        fileExtensionRule: {
+          enabled: false,
+          extensions: [],
+          listedAction: 'skip',
+          unknownAction: 'intercept',
+        },
         interceptionScope: {
           browserDownloads: true,
           magnet: false,
@@ -220,6 +238,12 @@ describe('StorageService.updateSettings', () => {
           enabled: true,
           sizeMb: 5,
           unknownSizeAction: 'skip',
+        },
+        fileExtensionRule: {
+          enabled: false,
+          extensions: [],
+          listedAction: 'skip',
+          unknownAction: 'intercept',
         },
         interceptionScope: {
           browserDownloads: true,

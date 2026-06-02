@@ -6,6 +6,7 @@ import type {
   FilterStage,
 } from '@/shared/types';
 import { INTERCEPTABLE_SCHEMES } from '@/shared/constants';
+import { matchesFileExtension, resolveFileExtension } from '@/shared/file-extension-rule';
 import { extractFilenameFromUrl } from '@/shared/url';
 import picomatch from 'picomatch';
 
@@ -180,6 +181,33 @@ export class MinimumFileSizeStage implements FilterStage {
 }
 
 /**
+ * Stage: Apply the user-defined file extension rule.
+ *
+ * This is intentionally metadata-only. The browser download event exposes
+ * filename and URL fields, but not file bytes, so content sniffing belongs in
+ * the desktop app rather than the extension interceptor.
+ */
+export class FileExtensionRuleStage implements FilterStage {
+  readonly name = 'file-extension-rule';
+
+  evaluate(ctx: FilterContext, config: DownloadSettings): FilterVerdict | null {
+    const settings = config.fileExtensionRule;
+    if (!settings.enabled) return null;
+
+    const extension = resolveFileExtension([
+      ctx.filename,
+      extractFilenameFromUrl(ctx.finalUrl),
+      extractFilenameFromUrl(ctx.url),
+    ]);
+    if (!extension) return settings.unknownAction;
+
+    return settings.extensions.some((item) => matchesFileExtension(extension, item))
+      ? settings.listedAction
+      : null;
+  }
+}
+
+/**
  * Stage: Skip downloads whose MIME type indicates a document rather than a file.
  *
  * Many cloud storage services (Lanzou, MediaFire, etc.) serve JavaScript-heavy
@@ -219,7 +247,7 @@ export class MimeTypeStage implements FilterStage {
  * Create the complete filter pipeline with all stages.
  *
  * Pipeline order:
- * 1. Enabled → 2. SelfTrigger → 3. InterceptionScope → 4. Scheme → 5. SiteRule → 6. MimeType → 7. MinimumFileSize
+ * 1. Enabled → 2. SelfTrigger → 3. InterceptionScope → 4. Scheme → 5. SiteRule → 6. MimeType → 7. FileExtensionRule → 8. MinimumFileSize
  *
  * @param getRules - Getter for current site rules (lazy evaluation)
  */
@@ -231,6 +259,7 @@ export function createFilterPipeline(getRules: () => SiteRule[]): FilterStage[] 
     new SchemeStage(),
     new SiteRuleStage(getRules),
     new MimeTypeStage(),
+    new FileExtensionRuleStage(),
     new MinimumFileSizeStage(),
   ];
 }

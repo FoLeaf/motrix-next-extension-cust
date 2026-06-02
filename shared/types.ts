@@ -42,6 +42,7 @@ export interface DownloadSettings {
   forwardCookies: boolean;
   duplicateGuard: DuplicateDownloadGuardSettings;
   minimumFileSize: MinimumFileSizeSettings;
+  fileExtensionRule: FileExtensionRuleSettings;
   interceptionScope: InterceptionScope;
 }
 
@@ -54,6 +55,15 @@ export interface MinimumFileSizeSettings {
   enabled: boolean;
   sizeMb: number;
   unknownSizeAction: 'intercept' | 'skip';
+}
+
+export type FileExtensionRuleAction = 'intercept' | 'skip';
+
+export interface FileExtensionRuleSettings {
+  enabled: boolean;
+  extensions: string[];
+  listedAction: FileExtensionRuleAction;
+  unknownAction: FileExtensionRuleAction;
 }
 
 export interface InterceptionScope {
