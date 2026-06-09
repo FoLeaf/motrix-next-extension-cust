@@ -119,14 +119,14 @@ export async function publishEdgeFromEnv(): Promise<void> {
   });
 
   if (publishResult.decision.action === 'skipped-in-review') {
-    console.log('::warning::Edge Add-ons: another submission is currently in review');
+    console.log('::notice::Edge Add-ons: another submission is currently in review');
     await saveRepositoryVariables(updates);
     setOutput('outcome', 'skipped-in-review');
     return;
   }
 
   if (publishResult.decision.action === 'skipped-no-updates') {
-    console.log('::warning::Edge Add-ons: no publishable draft updates were found');
+    console.log('::notice::Edge Add-ons: no publishable draft updates were found');
     await saveRepositoryVariables(updates);
     setOutput('outcome', 'skipped-no-updates');
     return;
@@ -220,7 +220,7 @@ async function submitForReview(input: {
   console.log(`Publish HTTP status: ${response.status}`);
 
   if (response.status === 404) {
-    console.log('::warning::Edge Add-ons: another submission is currently in review');
+    console.log('::notice::Edge Add-ons: another submission is currently in review');
     setOutput('outcome', 'skipped-in-review');
     process.exitCode = 0;
     return '';

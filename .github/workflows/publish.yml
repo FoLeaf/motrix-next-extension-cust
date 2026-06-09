@@ -12,20 +12,17 @@ permissions:
   actions: write
   contents: read
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   resolve-version:
     name: Resolve Version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
       version: ${{ steps.resolve.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/setup-node-pnpm
 
@@ -40,16 +37,16 @@ jobs:
   quality-gate:
     name: Quality Gate
     needs: resolve-version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: workflow
           ref: main
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: source
           ref: ${{ needs.resolve-version.outputs.tag }}
@@ -65,18 +62,18 @@ jobs:
   publish-chrome:
     name: Publish to Chrome Web Store
     needs: [resolve-version, quality-gate]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
       outcome: ${{ steps.publish.outputs.outcome }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: workflow
           ref: main
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: source
           ref: ${{ needs.resolve-version.outputs.tag }}
@@ -103,18 +100,18 @@ jobs:
   publish-firefox:
     name: Publish to Firefox AMO
     needs: [resolve-version, quality-gate]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
       outcome: ${{ steps.publish.outputs.outcome }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: workflow
           ref: main
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: source
           ref: ${{ needs.resolve-version.outputs.tag }}
@@ -142,18 +139,18 @@ jobs:
   publish-edge:
     name: Publish to Edge Add-ons
     needs: [resolve-version, quality-gate]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
       outcome: ${{ steps.publish.outputs.outcome }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: workflow
           ref: main
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: source
           ref: ${{ needs.resolve-version.outputs.tag }}
@@ -181,11 +178,11 @@ jobs:
   publish-summary:
     name: Publish Summary
     needs: [resolve-version, quality-gate, publish-chrome, publish-firefox, publish-edge]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: always()
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/setup-node-pnpm
 

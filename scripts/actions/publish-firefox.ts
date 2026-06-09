@@ -27,7 +27,7 @@ export function publishFirefoxFromEnv(): void {
   console.log(output.output);
   const outcome = classifyFirefoxSignOutput(output.exitCode, output.output);
   if (outcome === 'skipped-version-exists') {
-    console.log('::warning::Firefox AMO: version already submitted, skipping');
+    console.log('::notice::Firefox AMO: version already submitted, skipping');
   }
   setOutput('outcome', outcome);
 }

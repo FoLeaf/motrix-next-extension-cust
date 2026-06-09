@@ -32,7 +32,7 @@ export function publishChromeFromEnv(): void {
   console.log(output.output);
   const outcome = classifyChromeUploadOutput(output.exitCode, output.output);
   if (outcome === 'skipped-pending-review') {
-    console.log('::warning::Chrome Web Store: item is pending review, skipping upload');
+    console.log('::notice::Chrome Web Store: item is pending review, skipping upload');
   }
   setOutput('outcome', outcome);
 }

@@ -126,8 +126,8 @@ No. This extension does **not** collect, store, or transmit any personal data. A
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) ≥ 18
-- [pnpm](https://pnpm.io/) ≥ 10
+- [Node.js](https://nodejs.org/) 24.16.0 LTS
+- [pnpm](https://pnpm.io/) 10.34.1
 - [Motrix Next](https://github.com/AnInsomniacy/motrix-next) desktop app running
 
 ### Setup

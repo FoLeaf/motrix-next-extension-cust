@@ -8,8 +8,8 @@ Before you start contributing, make sure you understand [GitHub flow](https://gu
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) >= 18
-- [pnpm](https://pnpm.io/) >= 9
+- [Node.js](https://nodejs.org/) 24.16.0 LTS
+- [pnpm](https://pnpm.io/) 10.34.1
 - [Motrix Next](https://github.com/AnInsomniacy/motrix-next) desktop app running with RPC enabled (for manual testing)
 
 ### Getting Started
