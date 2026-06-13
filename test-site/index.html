@@ -673,6 +673,55 @@
         </div>
       </section>
 
+      <!-- ── 9. Referrer Race Reproduction (#42) ───────────────── -->
+      <section class="section">
+        <div class="section__header">
+          <span class="section__icon">⏱</span>
+          <h2 class="section__title">Referrer Race Reproduction (#42)</h2>
+          <span class="section__count">expect: compare dialogs</span>
+        </div>
+        <div class="card-list">
+          <div class="card">
+            <div class="card__bar card__bar--info"></div>
+            <div class="card__body">
+              <div class="card__row">
+                <span class="card__name">Microsoft Edge Enterprise MSI — with referrer</span>
+                <span class="card__meta">.msi · ~193 MB</span>
+              </div>
+              <div class="card__desc">
+                Normal page click. Expected to carry a referrer and be cancelled quickly.
+              </div>
+            </div>
+            <div class="card__actions">
+              <a class="btn btn--primary" href="https://go.microsoft.com/fwlink/?LinkID=2093437"
+                >↓ Download</a
+              >
+            </div>
+          </div>
+          <div class="card">
+            <div class="card__bar card__bar--error"></div>
+            <div class="card__body">
+              <div class="card__row">
+                <span class="card__name">Microsoft Edge Enterprise MSI — no referrer</span>
+                <span class="card__meta">.msi · ~193 MB</span>
+              </div>
+              <div class="card__desc">
+                Same URL with <code>rel="noreferrer"</code>. Expected to reproduce the native save
+                dialog if cancellation is delayed by missing referrer fallback.
+              </div>
+            </div>
+            <div class="card__actions">
+              <a
+                class="btn btn--primary"
+                rel="noreferrer"
+                href="https://go.microsoft.com/fwlink/?LinkID=2093437"
+                >↓ Download</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ── Footer ───────────────────────────────────────────── -->
       <footer class="footer">
         Motrix Next Extension · Download Test Suite · For development use only

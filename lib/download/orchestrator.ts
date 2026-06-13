@@ -41,7 +41,6 @@ export interface OrchestratorDeps {
   };
   getSettings: () => DownloadSettings;
   getSiteRules: () => SiteRule[];
-  getTabUrl: (id?: number) => Promise<string>;
   filenameMetadata?: {
     resolve: (item: DownloadItem) => Promise<FilenameMetadata | undefined>;
   };
@@ -218,8 +217,7 @@ export class DownloadOrchestrator {
     }
 
     const settings = this.deps.getSettings();
-    const tabUrl =
-      item.requestHeaderContext?.referer || item.referrer || (await this.deps.getTabUrl());
+    const tabUrl = item.requestHeaderContext?.referer || item.referrer || '';
 
     // ─── Filter ─────────────────────────────────
     const ctx: FilterContext = {

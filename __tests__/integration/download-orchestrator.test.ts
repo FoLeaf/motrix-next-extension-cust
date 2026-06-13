@@ -23,6 +23,7 @@ interface MockDownloadItem {
   mime: string;
   byExtensionId?: string;
   state: string;
+  referrer?: string;
   requestHeaderContext?: RequestHeaderContext;
   requestHeaderDiagnostics?: {
     enabled: boolean;
@@ -43,6 +44,7 @@ function createMockDownloadItem(overrides?: Partial<MockDownloadItem>): Download
     totalBytes: 10_000_000,
     mime: 'application/zip',
     state: 'in_progress',
+    referrer: 'https://example.com/page',
     ...overrides,
   };
 }
@@ -62,7 +64,6 @@ function createMockDeps(overrides: Partial<OrchestratorDeps> = {}): Orchestrator
       ...DEFAULT_DOWNLOAD_SETTINGS,
     } satisfies DownloadSettings),
     getSiteRules: vi.fn().mockReturnValue([] as SiteRule[]),
-    getTabUrl: vi.fn<() => Promise<string>>().mockResolvedValue('https://example.com/page'),
     openProtocolNewTask: vi
       .fn<(url: string, referer: string, filename?: string) => Promise<void>>()
       .mockResolvedValue(undefined),
@@ -127,6 +128,18 @@ describe('DownloadOrchestrator', () => {
         'https://example.com/file.zip',
         'https://example.com/page',
       );
+    });
+
+    it('does not query the active tab before cancelling no-referrer downloads', async () => {
+      const item = createMockDownloadItem({
+        referrer: '',
+        requestHeaderContext: undefined,
+      });
+
+      await orchestrator.handleCreated(item);
+
+      expect(deps.downloads.cancel).toHaveBeenCalledWith(1);
+      expect(deps.openProtocolNewTask).toHaveBeenCalledWith('https://example.com/file.zip', '');
     });
 
     it('routes torrent downloads to desktop (same unified path)', async () => {
@@ -364,13 +377,12 @@ describe('DownloadOrchestrator', () => {
       expect(deps.downloads.cancel).toHaveBeenCalledWith(1);
     });
 
-    it('does not invoke getSettings or getTabUrl for stale items (fast path)', async () => {
+    it('does not invoke getSettings for stale items (fast path)', async () => {
       const item = createMockDownloadItem({ state: 'complete' });
 
       await orchestrator.handleCreated(item);
 
       expect(deps.getSettings).not.toHaveBeenCalled();
-      expect(deps.getTabUrl).not.toHaveBeenCalled();
     });
   });
 

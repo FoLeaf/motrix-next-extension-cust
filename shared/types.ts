@@ -127,7 +127,6 @@ export type DiagnosticCode =
   // ── Infrastructure ────────────────────────────────────
   | 'storage_persist_failed'
   | 'download_bar_error'
-  | 'tab_query_failed'
   // ── Notification ───────────────────────────────────────
   | 'notification_create_failed'
   | 'download_route_failed';

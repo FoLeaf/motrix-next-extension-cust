@@ -185,20 +185,6 @@ export default defineBackground(() => {
     await downloadBarService.apply({ hideDownloadBar: settings.hideDownloadBar });
   }
 
-  // ─── Get tab URL for referer ──────────────────────
-  async function getTabUrl(): Promise<string> {
-    try {
-      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-      return tab?.url ?? '';
-    } catch (e) {
-      logWarn(
-        'tab_query_failed',
-        `Tab query failed, referer will be empty: ${e instanceof Error ? e.message : String(e)}`,
-      );
-      return '';
-    }
-  }
-
   // ─── Orchestrator ───────────────────────────────────
   const orchestrator = new DownloadOrchestrator({
     downloads: {
@@ -226,7 +212,6 @@ export default defineBackground(() => {
     },
     getSettings: () => settings,
     getSiteRules: () => siteRules,
-    getTabUrl,
     filenameMetadata,
     duplicateGuard: duplicateDownloadGuard,
     desktopClient,
