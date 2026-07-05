@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Motrix Next Opt</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="icons/icon32.png" alt="" class="logo" />
+          <div>
+            <h1>Motrix Next Opt</h1>
+            <p id="connectionText">--</p>
+          </div>
+        </div>
+        <button id="openMain" class="icon-button wide" type="button" title="打开主界面">主界面</button>
+      </header>
+
+      <section class="summary" aria-live="polite">
+        <div>
+          <span class="label">速度</span>
+          <strong id="totalSpeed">0 B/s</strong>
+        </div>
+        <div>
+          <span class="label">进度</span>
+          <strong id="totalProgress">--</strong>
+        </div>
+        <div>
+          <span class="label">任务</span>
+          <strong id="totalTasks">0</strong>
+        </div>
+      </section>
+
+      <section class="settings" id="settingsPanel">
+        <label>
+          <span>端口</span>
+          <input id="portInput" inputmode="numeric" autocomplete="off" />
+        </label>
+        <label>
+          <span>密钥</span>
+          <input id="tokenInput" type="password" autocomplete="off" />
+        </label>
+        <label class="checkbox-row">
+          <input id="interceptInput" type="checkbox" />
+          <span>接管 Chrome 下载</span>
+        </label>
+        <button id="saveSettings" class="primary" type="button">保存</button>
+      </section>
+
+      <section class="task-list" id="taskList"></section>
+    </main>
+
+    <template id="taskTemplate">
+      <article class="task">
+        <div class="task-head">
+          <div class="task-name"></div>
+          <span class="task-status"></span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="task-meta">
+          <span class="task-speed"></span>
+          <span class="task-size"></span>
+          <span class="task-eta"></span>
+        </div>
+        <div class="task-path"></div>
+        <div class="task-actions">
+          <button class="icon-button task-toggle" type="button" title="暂停/继续"></button>
+          <button class="icon-button task-cancel" type="button" title="取消">x</button>
+          <button class="icon-button task-open" type="button" title="打开文件">Open</button>
+          <button class="icon-button task-folder" type="button" title="打开文件夹">目录</button>
+        </div>
+      </article>
+    </template>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
