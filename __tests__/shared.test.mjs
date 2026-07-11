@@ -264,5 +264,27 @@ test("manifest declares native download interception permissions", () => {
   assert.equal(manifest.permissions.includes("webRequest"), true);
   assert.equal(manifest.host_permissions.includes("<all_urls>"), true);
   assert.deepEqual(manifest.content_scripts?.[0]?.matches, ["http://*/*", "https://*/*"]);
-  assert.deepEqual(manifest.content_scripts?.[0]?.js, ["content.js"]);
+assert.deepEqual(manifest.content_scripts?.[0]?.js, ["content-download-extensions.js", "content.js"]);
 });
+
+function extractQuotedStringsFromSetLiteral(source) {
+  const match = source.match(/new\s+Set\s*\(\s*\[([\s\S]*?)\]\s*\)/);
+  assert.ok(match, "expected new Set([ ... ]) in content-download-extensions.js");
+  return [...match[1].matchAll(/"([a-z0-9]+)"/g)].map((m) => m[1]).sort();
+}
+
+test("content-download-extensions list matches download-extensions-data list", () => {
+  const classicSource = readFileSync(join(extensionRoot, "content-download-extensions.js"), "utf8");
+  const classic = extractQuotedStringsFromSetLiteral(classicSource);
+  const shared = [...DOWNLOAD_FILE_EXTENSIONS_LIST].slice().sort();
+  assert.deepEqual(classic, shared);
+});
+
+test("manifest injects content download extensions before content.js", () => {
+  const manifest = JSON.parse(readFileSync(join(extensionRoot, "manifest.json"), "utf8"));
+  assert.deepEqual(manifest.content_scripts?.[0]?.js, [
+    "content-download-extensions.js",
+    "content.js"
+  ]);
+});
+

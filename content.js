@@ -1,25 +1,8 @@
 (() => {
-  const DOWNLOAD_EXTENSIONS = new Set([
-    "7z",
-    "apk",
-    "appx",
-    "bin",
-    "bz2",
-    "deb",
-    "dmg",
-    "exe",
-    "gz",
-    "iso",
-    "msi",
-    "msix",
-    "pkg",
-    "rar",
-    "rpm",
-    "tar",
-    "torrent",
-    "xz",
-    "zip"
-  ]);
+  const DOWNLOAD_EXTENSIONS =
+    globalThis.MOTRIX_DOWNLOAD_EXTENSIONS instanceof Set
+      ? globalThis.MOTRIX_DOWNLOAD_EXTENSIONS
+      : new Set();
   const FALLBACK_DELAY_MS = 4000;
 
   document.addEventListener("click", onDocumentClick, true);
