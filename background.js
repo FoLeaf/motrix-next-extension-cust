@@ -26,6 +26,8 @@ let lastIconKey = "";
 const iconCache = new Map();
 const requestContextByUrl = new Map();
 const nativeDownloadDedupeByUrl = new Map();
+/** In-memory settings so onCreated can cancel Chrome downloads without awaiting storage. */
+let cachedSettings = normalizeSettings({});
 
 function createContextMenus() {
   chrome.contextMenus.removeAll(() => {
@@ -50,7 +52,13 @@ function wsBase(settings) {
 }
 
 async function readSettings() {
-  return normalizeSettings(await chrome.storage.local.get(["port", "token", "interceptDownloads"]));
+  const settings = normalizeSettings(await chrome.storage.local.get(["port", "token", "interceptDownloads"]));
+  cachedSettings = settings;
+  return settings;
+}
+
+function getCachedSettings() {
+  return cachedSettings;
 }
 
 export async function setNativeDownloadUiForSettings(settings, chromeApi = chrome) {
@@ -182,6 +190,14 @@ export const __nativeDownloadDedupeForTest = {
   isRecentlySubmittedNativeDownload
 };
 
+export function __setCachedSettingsForTest(settings) {
+  cachedSettings = normalizeSettings(settings || {});
+}
+
+export function __getCachedSettingsForTest() {
+  return cachedSettings;
+}
+
 function rememberRequestContext(details) {
   if (!isSupportedDownloadUrl(details.url)) return;
   pruneRequestContexts(Date.now());
@@ -289,43 +305,80 @@ async function handleDownloadCandidate(candidate = {}) {
   return { ok: true };
 }
 
-async function interceptNativeDownload(downloadItem) {
-  const settings = await readSettings();
-  if (!settings.token) return;
-  if (!shouldInterceptDownload(downloadItem, settings)) return;
+/**
+ * Cancel/pause Chrome's download immediately (sync decision from cache), then
+ * hand off to Motrix. Awaiting storage before cancel lets Save As flash.
+ */
+export async function interceptNativeDownload(downloadItem, options = {}) {
+  const settings = options.settings || getCachedSettings();
+  if (!shouldInterceptDownload(downloadItem, settings)) return { ok: false, reason: "skip" };
+  if (!settings.token) return { ok: false, reason: "missing-token" };
 
-  if (isRecentlySubmittedNativeDownload(downloadItem)) {
-    await cleanupChromeDownload(downloadItem.id);
-    return;
-  }
+  const downloadId = downloadItem.id;
+  const recentlySubmitted = isRecentlySubmittedNativeDownload(downloadItem);
 
-  let paused = false;
-  try {
-    await pauseChromeDownload(downloadItem.id);
-    paused = true;
-  } catch {
-    paused = false;
+  // Synchronous Chrome API calls first — do not await before cancel.
+  killChromeDownloadSync(downloadId);
+
+  if (recentlySubmitted) {
+    return { ok: true, deduped: true };
   }
 
   const request = buildAddRequestFromDownload(downloadItem, findRequestContext(downloadItem));
   if (!request.url || !isSupportedDownloadUrl(request.finalUrl || request.url)) {
-    if (paused) await resumeChromeDownload(downloadItem.id).catch(() => {});
-    return;
+    return { ok: false, reason: "unsupported-url" };
   }
 
-  const ok = await submitAddRequest(request, settings).catch(() => false);
-  if (!ok) {
-    if (paused) await resumeChromeDownload(downloadItem.id).catch(() => {});
-    return;
+  let activeSettings = settings;
+  if (!activeSettings.token) {
+    activeSettings = await readSettings();
+    if (!activeSettings.token || !shouldInterceptDownload(downloadItem, activeSettings)) {
+      return { ok: false, reason: "missing-token" };
+    }
   }
+
+  if (isRecentlySubmittedUrl(request.url) || isRecentlySubmittedUrl(request.finalUrl)) {
+    return { ok: true, deduped: true };
+  }
+
+  const ok = await submitAddRequest(request, activeSettings).catch(() => false);
+  if (!ok) return { ok: false, reason: "add-failed" };
 
   rememberNativeSubmissionForRequest(request);
-  await cleanupChromeDownload(downloadItem.id);
+  killChromeDownloadSync(downloadId);
   await ensureConnected();
-  void pollAfterSubmission(settings);
+  void pollAfterSubmission(activeSettings);
+  return { ok: true };
+}
+
+/** Fire pause/cancel/erase without awaiting — race against Save As UI. */
+export function killChromeDownloadSync(id, chromeApi = chrome) {
+  if (id == null || !chromeApi?.downloads) return;
+  try {
+    chromeApi.downloads.pause(id, () => {
+      void chromeApi.runtime?.lastError;
+    });
+  } catch {
+    /* ignore */
+  }
+  try {
+    chromeApi.downloads.cancel(id, () => {
+      void chromeApi.runtime?.lastError;
+    });
+  } catch {
+    /* ignore */
+  }
+  try {
+    chromeApi.downloads.erase({ id }, () => {
+      void chromeApi.runtime?.lastError;
+    });
+  } catch {
+    /* ignore */
+  }
 }
 
 async function cleanupChromeDownload(id) {
+  if (id == null) return;
   await pauseChromeDownload(id).catch(() => {});
   await cancelChromeDownload(id).catch(() => {});
   await eraseChromeDownload(id).catch(() => {});
@@ -601,10 +654,20 @@ if (hasChromeRuntime()) {
     ["requestHeaders", "extraHeaders"]
   );
   chrome.downloads.onCreated.addListener((downloadItem) => {
+    // Synchronous entry: cancel path uses cached settings, not awaited storage.
     void interceptNativeDownload(downloadItem).catch(() => setIdleIcon(false));
   });
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") return;
+    if (changes.port || changes.token || changes.interceptDownloads) {
+      cachedSettings = normalizeSettings({
+        port: changes.port ? changes.port.newValue : cachedSettings.port,
+        token: changes.token ? changes.token.newValue : cachedSettings.token,
+        interceptDownloads: changes.interceptDownloads
+          ? changes.interceptDownloads.newValue
+          : cachedSettings.interceptDownloads
+      });
+    }
     if (changes.interceptDownloads || changes.token || changes.port) {
       void applyNativeDownloadUiFromCurrentSettings();
     }
@@ -615,7 +678,12 @@ if (hasChromeRuntime()) {
       return true;
     }
     if (message?.type === "wake") {
-      ensureConnected().then(() => sendResponse({ ok: true }));
+      ensureConnected()
+        .then(async () => {
+          await applyNativeDownloadUiFromCurrentSettings();
+          sendResponse({ ok: true });
+        })
+        .catch(() => sendResponse({ ok: false }));
       return true;
     }
     if (message?.type === "downloadCandidate") {
