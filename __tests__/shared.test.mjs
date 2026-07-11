@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DOWNLOAD_FILE_EXTENSIONS_LIST } from "../download-extensions-data.js";
 import {
   buildAddRequestFromCandidate,
   buildAddRequestFromDownload,
@@ -10,6 +11,7 @@ import {
   cookieHeaderFromCookies,
   dedupeKeyForUrl,
   deriveIconState,
+  DOWNLOAD_FILE_EXTENSIONS,
   iconKey,
   isDownloadLikeLink,
   normalizeSettings,
@@ -147,6 +149,33 @@ test("isDownloadLikeLink avoids normal navigation and non-web URLs", () => {
   assert.equal(isDownloadLikeLink("https://example.com/view"), false);
   assert.equal(isDownloadLikeLink("blob:https://example.com/1", { download: true }), false);
   assert.equal(isDownloadLikeLink("data:application/octet-stream,abc", { download: true }), false);
+});
+
+test("isDownloadLikeLink recognizes expanded common download extensions", () => {
+  assert.equal(isDownloadLikeLink("https://example.com/report.pdf"), true);
+  assert.equal(isDownloadLikeLink("https://example.com/movie.mkv"), true);
+  assert.equal(isDownloadLikeLink("https://example.com/sheet.docx"), true);
+  assert.equal(isDownloadLikeLink("https://example.com/pack.zst"), true);
+  assert.equal(isDownloadLikeLink("https://cdn.example.com/audio.flac?token=1"), true);
+  assert.equal(isDownloadLikeLink("https://example.com/model.gguf"), true);
+});
+
+test("isDownloadLikeLink still avoids navigation and web asset suffixes", () => {
+  assert.equal(isDownloadLikeLink("https://example.com/docs/page.html"), false);
+  assert.equal(isDownloadLikeLink("https://example.com/api.json"), false);
+  assert.equal(isDownloadLikeLink("https://example.com/style.css"), false);
+  assert.equal(isDownloadLikeLink("https://example.com/app.js"), false);
+  assert.equal(isDownloadLikeLink("https://example.com/icon.svg"), false);
+});
+
+test("DOWNLOAD_FILE_EXTENSIONS is built from the shared data list", () => {
+  assert.equal(DOWNLOAD_FILE_EXTENSIONS instanceof Set, true);
+  assert.deepEqual(
+    [...DOWNLOAD_FILE_EXTENSIONS].sort(),
+    [...DOWNLOAD_FILE_EXTENSIONS_LIST].sort()
+  );
+  assert.equal(DOWNLOAD_FILE_EXTENSIONS.has("pdf"), true);
+  assert.equal(DOWNLOAD_FILE_EXTENSIONS.has("html"), false);
 });
 
 test("requestHeadersToContext separates sensitive browser context without authorization", () => {

@@ -1,27 +1,9 @@
+import { DOWNLOAD_FILE_EXTENSIONS_LIST } from "./download-extensions-data.js";
+
 export const DEFAULT_PORT = 29110;
 export const ICON_BUCKET_SIZE = 5;
 export const DEFAULT_INTERCEPT_DOWNLOADS = true;
-export const DOWNLOAD_FILE_EXTENSIONS = new Set([
-  "7z",
-  "apk",
-  "appx",
-  "bin",
-  "bz2",
-  "deb",
-  "dmg",
-  "exe",
-  "gz",
-  "iso",
-  "msi",
-  "msix",
-  "pkg",
-  "rar",
-  "rpm",
-  "tar",
-  "torrent",
-  "xz",
-  "zip"
-]);
+export const DOWNLOAD_FILE_EXTENSIONS = new Set(DOWNLOAD_FILE_EXTENSIONS_LIST);
 export const REQUEST_HEADER_ALLOWLIST = new Set([
   "accept",
   "accept-language",
