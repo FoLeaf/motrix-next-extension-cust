@@ -5,6 +5,6 @@
   "type": "module",
   "description": "Chrome/Edge MV3 companion extension for Motrix Next Opt.",
   "scripts": {
-    "test": "node --test __tests__/*.mjs"
+    "test": "node --test tests/*.mjs"
   }
 }

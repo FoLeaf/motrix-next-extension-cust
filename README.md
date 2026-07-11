@@ -42,7 +42,7 @@ Primary files:
 - `content.js` - early click interception for download-like links.
 - `popup.html`, `popup.css`, `popup.js` - progress dashboard and task controls.
 - `shared.js` - pure helpers shared by background/popup/tests.
-- `__tests__/` - Node test coverage for the takeover and progress helpers.
+- `tests/` - Node test coverage for the takeover and progress helpers.
 
 ## Security Notes
 
