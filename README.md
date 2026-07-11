@@ -4,7 +4,7 @@ Chrome/Edge MV3 companion extension for [Motrix Next Opt](https://github.com/FoL
 
 ## Features
 
-- Intercepts common download clicks from content scripts before Chrome creates a native download item.
+- Intercepts common download clicks from content scripts before Chrome creates a native download item (expanded extension whitelist: archives, documents, media, disk images, packages, and more).
 - Falls back to `chrome.downloads.onCreated` cleanup for downloads that cannot be predicted from page clicks.
 - Hides Chrome's native downloads UI while takeover is enabled.
 - Forwards safe request context to Motrix Next Opt, including cookies, Referer, User-Agent, and allowlisted headers. Authorization headers are intentionally excluded.
