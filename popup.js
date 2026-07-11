@@ -140,7 +140,10 @@ function renderEmpty(text) {
 function renderTask(task) {
   const node = els.taskTemplate.content.firstElementChild.cloneNode(true);
   node.dataset.gid = task.gid;
-  node.querySelector(".task-name").textContent = task.name || task.gid;
+  const name = task.name || task.gid;
+  const nameEl = node.querySelector(".task-name");
+  nameEl.textContent = name;
+  nameEl.title = name;
 
   const status = node.querySelector(".task-status");
   status.textContent = statusLabel(task.status);
@@ -158,7 +161,10 @@ function renderTask(task) {
   node.querySelector(".task-speed").textContent = formatSpeed(Number(task.downloadSpeed || 0));
   node.querySelector(".task-size").textContent = `${formatBytes(Number(task.completedLength || 0))} / ${formatBytes(Number(task.totalLength || 0))}`;
   node.querySelector(".task-eta").textContent = formatEta(task.etaSeconds);
-  node.querySelector(".task-path").textContent = task.targetPath || task.dir || "";
+  const path = task.targetPath || task.dir || "";
+  const pathEl = node.querySelector(".task-path");
+  pathEl.textContent = path;
+  pathEl.title = path;
 
   const toggle = node.querySelector(".task-toggle");
   const resume = task.status === "paused";

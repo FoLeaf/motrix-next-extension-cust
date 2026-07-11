@@ -187,9 +187,13 @@ button:focus-visible {
   display: grid;
   gap: 8px;
   padding-right: 2px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .task {
+  min-width: 0;
+  overflow: hidden;
   padding: 10px;
 }
 
@@ -198,11 +202,19 @@ button:focus-visible {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
+  min-width: 0;
 }
 
 .task-name,
 .task-path,
 .task-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-meta > * {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
