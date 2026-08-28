@@ -35,11 +35,14 @@ async function init() {
 function bindEvents() {
   els.saveSettings.addEventListener("click", saveSettings);
   els.openMain.addEventListener("click", () => postWindowShow());
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void refresh();
+  });
   els.taskList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
     const task = button.closest(".task");
-    void postTaskAction(task.dataset.gid, button.dataset.action);
+    void postTaskAction(task.dataset.gid, button.dataset.action, task.dataset.targetPath || "");
   });
 }
 
@@ -65,11 +68,12 @@ async function refresh() {
     const snapshot = await fetchSnapshot();
     renderSnapshot(snapshot);
     const activeCount = Number(snapshot.totals.numActive || 0) + Number(snapshot.totals.numWaiting || 0);
-    if (activeCount > 0) {
-      refreshTimer = setTimeout(refresh, refreshMs);
-    }
+    els.connectionText.textContent = activeCount > 0 ? "下载中" : "已连接";
+    els.connectionText.className = "";
+    refreshTimer = setTimeout(refresh, activeCount > 0 ? refreshMs : refreshMs * 2);
   } catch {
     renderDisconnected("未连接");
+    refreshTimer = setTimeout(refresh, refreshMs * 2);
   }
 }
 
@@ -82,7 +86,7 @@ async function fetchSnapshot() {
   return response.json();
 }
 
-async function postTaskAction(gid, action) {
+async function postTaskAction(gid, action, targetPath = "") {
   if (!gid || !action) return;
   const response = await fetch(`${apiBase()}/task-action`, {
     method: "POST",
@@ -90,9 +94,10 @@ async function postTaskAction(gid, action) {
       ...authHeaders(),
       "Content-Type": "application/json"
     },
-    body: buildTaskActionBody(gid, action)
+    body: buildTaskActionBody(gid, action, targetPath)
   });
-  if (response.ok) await refresh();
+  const payload = await response.json().catch(() => null);
+  if (response.ok && payload?.status === "ok") await refresh();
 }
 
 async function postWindowShow() {
@@ -105,17 +110,15 @@ async function postWindowShow() {
 
 function renderSnapshot(snapshot) {
   const totals = snapshot.totals || {};
+  const tasks = sortTasksByCreatedDesc(Array.isArray(snapshot.tasks) ? snapshot.tasks : []);
   const activeCount = Number(totals.numActive || 0) + Number(totals.numWaiting || 0);
-  els.connectionText.textContent = activeCount > 0 ? "下载中" : "已连接";
-  els.connectionText.className = "";
   els.totalSpeed.textContent = formatSpeed(Number(totals.downloadSpeed || 0));
   els.totalProgress.textContent = totals.hasUnknownSize ? "活动中" : formatPercent(totals.progress);
-  els.totalTasks.textContent = String(activeCount);
+  els.totalTasks.textContent = String(tasks.length);
 
-  const tasks = sortTasksByCreatedDesc(Array.isArray(snapshot.tasks) ? snapshot.tasks : []);
   els.taskList.textContent = "";
   if (tasks.length === 0) {
-    renderEmpty("暂无任务");
+    renderEmpty(activeCount > 0 ? "同步任务中" : "暂无任务");
     return;
   }
   for (const task of tasks) {
@@ -168,6 +171,7 @@ function renderTask(task) {
   const pathEl = node.querySelector(".task-path");
   pathEl.textContent = path;
   pathEl.title = path;
+  if (path) node.dataset.targetPath = path;
 
   const toggle = node.querySelector(".task-toggle");
   const resume = task.status === "paused";

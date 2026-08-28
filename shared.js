@@ -58,8 +58,12 @@ export function iconKey(iconState) {
   return `${iconState.mode}:${iconState.bucket}:${iconState.hasError ? "error" : "ok"}`;
 }
 
-export function buildTaskActionBody(gid, action) {
-  return JSON.stringify({ gid, action });
+export function buildTaskActionBody(gid, action, targetPath) {
+  const body = { gid, action };
+  if (typeof targetPath === "string" && targetPath.trim() !== "") {
+    body.targetPath = targetPath.trim();
+  }
+  return JSON.stringify(body);
 }
 
 export function sortTasksByCreatedDesc(tasks = []) {

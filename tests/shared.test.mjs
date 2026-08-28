@@ -94,8 +94,13 @@ test("normalizeSettings defaults invalid ports and trims token", () => {
   });
 });
 
-test("buildTaskActionBody sends only gid and action", () => {
+test("buildTaskActionBody sends gid, action, and optional targetPath", () => {
   assert.equal(buildTaskActionBody("abc123", "open"), '{"gid":"abc123","action":"open"}');
+  assert.deepEqual(JSON.parse(buildTaskActionBody("abc123", "showInFolder", "C:\\Downloads\\file.zip")), {
+    gid: "abc123",
+    action: "showInFolder",
+    targetPath: "C:\\Downloads\\file.zip"
+  });
 });
 
 test("sortTasksByCreatedDesc keeps extension list aligned with newest Motrix tasks first", () => {
