@@ -287,6 +287,10 @@ test("manifest declares native download interception permissions", () => {
   assert.equal(manifest.permissions.includes("cookies"), true);
   assert.equal(manifest.permissions.includes("webRequest"), true);
   assert.equal(firefoxManifest.permissions.includes("webRequestBlocking"), true);
+  assert.deepEqual(firefoxManifest.browser_specific_settings?.gecko?.data_collection_permissions, {
+    required: ["none"]
+  });
+  assert.equal(firefoxManifest.browser_specific_settings?.gecko?.strict_min_version, "140.0");
   assert.equal(chromiumManifest.permissions.includes("webRequestBlocking"), false);
   assert.equal(manifest.host_permissions.includes("<all_urls>"), true);
   assert.equal(manifest.host_permissions.includes("http://127.0.0.1/*"), true);

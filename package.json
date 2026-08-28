@@ -1,6 +1,6 @@
 {
   "name": "motrix-next-opt-extension",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "type": "module",
   "description": "Chrome/Edge/Firefox MV3 companion extension for Motrix Next Opt.",
