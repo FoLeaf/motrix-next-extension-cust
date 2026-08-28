@@ -2,8 +2,14 @@
   "manifest_version": 3,
   "name": "Motrix Next Opt",
   "description": "Shows Motrix Next Opt download progress without opening the main window.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minimum_chrome_version": "116",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "motrix-next-opt@foleaf.dev",
+      "strict_min_version": "112.0"
+    }
+  },
   "action": {
     "default_title": "Motrix Next Opt",
     "default_popup": "popup.html",
@@ -15,6 +21,7 @@
     }
   },
   "background": {
+    "scripts": ["background.js"],
     "service_worker": "background.js",
     "type": "module"
   },
