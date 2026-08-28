@@ -58,7 +58,7 @@ test("native download dedupe matches original or final URL during the TTL", () =
     true
   );
   assert.equal(
-    __nativeDownloadDedupeForTest.isRecentlySubmittedUrl("https://example.com/file.zip", now + 30000),
+    __nativeDownloadDedupeForTest.isRecentlySubmittedUrl("https://example.com/file.zip", now + 6000),
     false
   );
 });

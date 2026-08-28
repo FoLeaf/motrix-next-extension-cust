@@ -23,7 +23,7 @@ export const IDLE_DISCONNECT_MS = 20000;
 export const FALLBACK_ALARM_NAME = "motrix-progress-poll";
 const REQUEST_CONTEXT_TTL_MS = 120000;
 const REQUEST_CONTEXT_LIMIT = 400;
-export const NATIVE_DOWNLOAD_DEDUPE_TTL_MS = 20000;
+export const NATIVE_DOWNLOAD_DEDUPE_TTL_MS = 5000;
 const NATIVE_DOWNLOAD_DEDUPE_LIMIT = 500;
 const BROWSER_FALLBACK_TTL_MS = 30000;
 
@@ -150,6 +150,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Remember in-flight submissions so onCreated can cancel without double-adding. */
 function rememberNativeSubmission(rawUrl, now = Date.now()) {
   const key = dedupeKeyForUrl(rawUrl);
   if (!key) return false;
@@ -329,10 +330,6 @@ async function handleFirefoxResponseTakeover(candidate = {}) {
     return { ok: false, reason: "unsupported-url" };
   }
 
-  if (isRecentlySubmittedUrl(effectiveUrl) || isRecentlySubmittedUrl(request.url)) {
-    return { ok: true, deduped: true };
-  }
-
   const ok = await submitAddRequest(request, settings).catch(() => false);
   if (!ok) {
     await restartBrowserDownload(candidate);
@@ -375,10 +372,6 @@ async function handleDownloadCandidate(candidate = {}) {
   const effectiveUrl = request.finalUrl || request.url;
   if (!request.url || !isSupportedDownloadUrl(effectiveUrl)) {
     return { ok: false, reason: "unsupported-url" };
-  }
-
-  if (isRecentlySubmittedUrl(effectiveUrl) || isRecentlySubmittedUrl(request.url)) {
-    return { ok: true, deduped: true };
   }
 
   const ok = await submitAddRequest(request, settings).catch(() => false);
