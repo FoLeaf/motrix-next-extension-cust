@@ -1,4 +1,5 @@
 (() => {
+  const chrome = globalThis.browser ?? globalThis.chrome;
   const DOWNLOAD_EXTENSIONS =
     globalThis.MOTRIX_DOWNLOAD_EXTENSIONS instanceof Set
       ? globalThis.MOTRIX_DOWNLOAD_EXTENSIONS

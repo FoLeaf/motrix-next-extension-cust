@@ -10,8 +10,14 @@ import {
   normalizeUrlForMatch,
   requestHeadersToContext,
   resolveContextUrl,
+  shouldClaimFirefoxDownload,
   shouldInterceptDownload
 } from "./shared.js";
+import { createActionApiProxy, createBrowserApiProxy, hasExtensionRuntime, isFirefox, webRequestHeaderExtraInfo } from "./browser-api.js";
+import { parseFirefoxDownloadResponse } from "./firefox-response.js";
+
+const chrome = createBrowserApiProxy();
+const action = createActionApiProxy();
 
 export const IDLE_DISCONNECT_MS = 20000;
 export const FALLBACK_ALARM_NAME = "motrix-progress-poll";
@@ -19,6 +25,7 @@ const REQUEST_CONTEXT_TTL_MS = 120000;
 const REQUEST_CONTEXT_LIMIT = 400;
 export const NATIVE_DOWNLOAD_DEDUPE_TTL_MS = 20000;
 const NATIVE_DOWNLOAD_DEDUPE_LIMIT = 500;
+const BROWSER_FALLBACK_TTL_MS = 30000;
 
 let ws = null;
 let idleDisconnectTimer = null;
@@ -26,6 +33,7 @@ let lastIconKey = "";
 const iconCache = new Map();
 const requestContextByUrl = new Map();
 const nativeDownloadDedupeByUrl = new Map();
+const browserFallbackByUrl = new Map();
 /** In-memory settings so onCreated can cancel Chrome downloads without awaiting storage. */
 let cachedSettings = normalizeSettings({});
 
@@ -40,7 +48,7 @@ function createContextMenus() {
 }
 
 function hasChromeRuntime() {
-  return typeof chrome !== "undefined" && chrome.runtime && chrome.action;
+  return hasExtensionRuntime();
 }
 
 function apiBase(settings) {
@@ -281,6 +289,83 @@ async function buildCandidateAddRequest(candidate) {
   });
 }
 
+function markBrowserFallback(rawUrl, now = Date.now()) {
+  const key = dedupeKeyForUrl(rawUrl);
+  if (!key) return;
+  browserFallbackByUrl.set(key, now + BROWSER_FALLBACK_TTL_MS);
+}
+
+function consumeBrowserFallback(downloadItem = {}, now = Date.now()) {
+  const key = dedupeKeyForUrl(downloadItem.finalUrl || downloadItem.url);
+  if (!key) return false;
+  const expiresAt = browserFallbackByUrl.get(key);
+  if (!expiresAt) return false;
+  browserFallbackByUrl.delete(key);
+  return expiresAt >= now;
+}
+
+async function restartBrowserDownload(candidate = {}) {
+  const url = candidate.finalUrl || candidate.url;
+  if (!url || !chrome.downloads?.download) return;
+  markBrowserFallback(url);
+  try {
+    await chrome.downloads.download({ url });
+  } catch {
+    /* ignore */
+  }
+}
+
+async function handleFirefoxResponseTakeover(candidate = {}) {
+  const settings = await readSettings();
+  if (!shouldClaimFirefoxDownload(candidate, settings)) {
+    await restartBrowserDownload(candidate);
+    return { ok: false, reason: "skip" };
+  }
+
+  const request = await buildCandidateAddRequest(candidate);
+  const effectiveUrl = request.finalUrl || request.url;
+  if (!request.url || !isSupportedDownloadUrl(effectiveUrl)) {
+    await restartBrowserDownload(candidate);
+    return { ok: false, reason: "unsupported-url" };
+  }
+
+  if (isRecentlySubmittedUrl(effectiveUrl) || isRecentlySubmittedUrl(request.url)) {
+    return { ok: true, deduped: true };
+  }
+
+  const ok = await submitAddRequest(request, settings).catch(() => false);
+  if (!ok) {
+    await restartBrowserDownload(candidate);
+    return { ok: false, reason: "add-failed" };
+  }
+
+  rememberNativeSubmissionForRequest(request);
+  await ensureConnected();
+  void pollAfterSubmission(settings);
+  return { ok: true };
+}
+
+function registerFirefoxResponseInterception() {
+  if (!isFirefox() || !chrome.webRequest?.onHeadersReceived) return;
+  try {
+    chrome.webRequest.onHeadersReceived.addListener(
+      (details) => {
+        const parsed = parseFirefoxDownloadResponse(details);
+        if (!parsed) return;
+        const settings = getCachedSettings();
+        if (!shouldClaimFirefoxDownload(parsed, settings)) return;
+
+        void handleFirefoxResponseTakeover(parsed).catch(() => restartBrowserDownload(parsed));
+        return { cancel: true };
+      },
+      { urls: ["http://*/*", "https://*/*"], types: ["main_frame", "sub_frame"] },
+      ["blocking", "responseHeaders"]
+    );
+  } catch (error) {
+    console.warn("Motrix Next Opt could not register Firefox response interception:", error);
+  }
+}
+
 async function handleDownloadCandidate(candidate = {}) {
   const settings = await readSettings();
   if (settings.interceptDownloads === false) return { ok: false, reason: "disabled" };
@@ -311,6 +396,14 @@ async function handleDownloadCandidate(candidate = {}) {
  */
 export async function interceptNativeDownload(downloadItem, options = {}) {
   const settings = options.settings || getCachedSettings();
+  if (isFirefox()) {
+    if (downloadItem.state && downloadItem.state !== "in_progress") {
+      return { ok: false, reason: "skip-state" };
+    }
+    if (consumeBrowserFallback(downloadItem)) {
+      return { ok: false, reason: "browser-fallback" };
+    }
+  }
   if (!shouldInterceptDownload(downloadItem, settings)) return { ok: false, reason: "skip" };
   if (!settings.token) return { ok: false, reason: "missing-token" };
 
@@ -423,15 +516,17 @@ function downloadCall(method, id) {
 }
 
 async function setBadge(hasError) {
-  await chrome.action.setBadgeBackgroundColor({ color: "#dc2626" });
-  await chrome.action.setBadgeText({ text: hasError ? "!" : "" });
+  if (!action) return;
+  await action.setBadgeBackgroundColor({ color: "#dc2626" });
+  await action.setBadgeText({ text: hasError ? "!" : "" });
 }
 
 async function setIdleIcon(hasError = false) {
+  if (!action) return;
   const state = { mode: "idle", bucket: 0, hasError };
   const key = iconKey(state);
   if (lastIconKey !== key) {
-    await chrome.action.setIcon({
+    await action.setIcon({
       path: {
         16: "icons/icon16.png",
         32: "icons/icon32.png",
@@ -445,6 +540,7 @@ async function setIdleIcon(hasError = false) {
 }
 
 async function updateIconFromSnapshot(snapshot) {
+  if (!action) return;
   const state = deriveIconState(snapshot);
   const key = iconKey(state);
   if (state.mode === "idle") {
@@ -452,7 +548,7 @@ async function updateIconFromSnapshot(snapshot) {
     return;
   }
   if (lastIconKey !== key) {
-    await chrome.action.setIcon({
+    await action.setIcon({
       imageData: {
         16: getGeneratedIcon(16, state),
         32: getGeneratedIcon(32, state),
@@ -651,8 +747,9 @@ if (hasChromeRuntime()) {
   chrome.webRequest.onBeforeSendHeaders.addListener(
     rememberRequestContext,
     { urls: ["http://*/*", "https://*/*"] },
-    ["requestHeaders", "extraHeaders"]
+    webRequestHeaderExtraInfo()
   );
+  registerFirefoxResponseInterception();
   chrome.downloads.onCreated.addListener((downloadItem) => {
     // Synchronous entry: cancel path uses cached settings, not awaited storage.
     void interceptNativeDownload(downloadItem).catch(() => setIdleIcon(false));

@@ -112,6 +112,13 @@ export function shouldInterceptDownload(downloadItem = {}, settings = {}) {
   return isSupportedDownloadUrl(url);
 }
 
+export function shouldClaimFirefoxDownload(candidate = {}, settings = {}) {
+  if (settings.interceptDownloads === false) return false;
+  if (!settings.token) return false;
+  const url = candidate.finalUrl || candidate.url || "";
+  return isSupportedDownloadUrl(url);
+}
+
 export function basenameFromPath(path) {
   if (typeof path !== "string" || path.trim() === "") return undefined;
   const normalized = path.replace(/\\/g, "/");

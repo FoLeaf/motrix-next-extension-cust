@@ -1,4 +1,7 @@
 import { DEFAULT_PORT, buildTaskActionBody, normalizeSettings, sortTasksByCreatedDesc } from "./shared.js";
+import { getBrowserApi } from "./browser-api.js";
+
+const chrome = getBrowserApi();
 
 const refreshMs = 1200;
 let settings = { port: DEFAULT_PORT, token: "" };

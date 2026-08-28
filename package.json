@@ -3,8 +3,10 @@
   "version": "0.1.1",
   "private": true,
   "type": "module",
-  "description": "Chrome/Edge MV3 companion extension for Motrix Next Opt.",
+  "description": "Chrome/Edge/Firefox MV3 companion extension for Motrix Next Opt.",
   "scripts": {
-    "test": "node --test tests/*.mjs"
+    "test": "node --test tests/*.mjs",
+    "manifest:firefox": "node scripts/use-manifest.mjs firefox",
+    "manifest:chromium": "node scripts/use-manifest.mjs chromium"
   }
 }

@@ -18,6 +18,7 @@ import {
   progressBucket,
   requestHeadersToContext,
   resolveContextUrl,
+  shouldClaimFirefoxDownload,
   shouldInterceptDownload,
   sortTasksByCreatedDesc
 } from "../shared.js";
@@ -256,15 +257,42 @@ test("buildAddRequestFromDownload forwards finalUrl and basename filename", () =
   });
 });
 
+test("shouldClaimFirefoxDownload requires token and supported URL", () => {
+  assert.equal(
+    shouldClaimFirefoxDownload({ url: "https://example.com/file.zip" }, { token: "secret" }),
+    true
+  );
+  assert.equal(
+    shouldClaimFirefoxDownload({ url: "https://example.com/file.zip" }, { token: "" }),
+    false
+  );
+  assert.equal(
+    shouldClaimFirefoxDownload({ url: "blob:https://example.com/x" }, { token: "secret" }),
+    false
+  );
+});
+
 test("manifest declares native download interception permissions", () => {
   const manifest = JSON.parse(readFileSync(join(extensionRoot, "manifest.json"), "utf8"));
+  const firefoxManifest = JSON.parse(readFileSync(join(extensionRoot, "manifest.firefox.json"), "utf8"));
+  const chromiumManifest = JSON.parse(readFileSync(join(extensionRoot, "manifest.chromium.json"), "utf8"));
   assert.equal(manifest.permissions.includes("downloads"), true);
-  assert.equal(manifest.permissions.includes("downloads.ui"), true);
+  assert.equal(manifest.permissions.includes("downloads.ui"), false);
+  assert.equal(manifest.optional_permissions?.includes("downloads.ui") ?? false, false);
   assert.equal(manifest.permissions.includes("cookies"), true);
   assert.equal(manifest.permissions.includes("webRequest"), true);
+  assert.equal(firefoxManifest.permissions.includes("webRequestBlocking"), true);
+  assert.equal(chromiumManifest.permissions.includes("webRequestBlocking"), false);
   assert.equal(manifest.host_permissions.includes("<all_urls>"), true);
+  assert.equal(manifest.host_permissions.includes("http://127.0.0.1/*"), true);
+  assert.equal(manifest.host_permissions.includes("ws://127.0.0.1/*"), true);
+  assert.equal(manifest.host_permissions.some((entry) => entry.includes(":*")), false);
+  assert.deepEqual(manifest.background?.scripts, firefoxManifest.background?.scripts);
+  assert.equal(Boolean(manifest.background?.service_worker), false);
+  assert.equal(chromiumManifest.permissions.includes("downloads.ui"), true);
+  assert.equal(Boolean(chromiumManifest.background?.service_worker), true);
   assert.deepEqual(manifest.content_scripts?.[0]?.matches, ["http://*/*", "https://*/*"]);
-assert.deepEqual(manifest.content_scripts?.[0]?.js, ["content-download-extensions.js", "content.js"]);
+  assert.deepEqual(manifest.content_scripts?.[0]?.js, ["content-download-extensions.js", "content.js"]);
 });
 
 function extractQuotedStringsFromSetLiteral(source) {
