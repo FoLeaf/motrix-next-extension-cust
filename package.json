@@ -1,11 +1,12 @@
 {
   "name": "motrix-next-opt-extension",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "Chrome/Edge/Firefox MV3 companion extension for Motrix Next Opt.",
   "scripts": {
     "test": "node --test tests/*.mjs",
+    "package:release": "node scripts/package-release.mjs",
     "manifest:firefox": "node scripts/use-manifest.mjs firefox",
     "manifest:chromium": "node scripts/use-manifest.mjs chromium"
   }
