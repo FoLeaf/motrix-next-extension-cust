@@ -55,7 +55,31 @@ export function deriveIconState(snapshot) {
 }
 
 export function iconKey(iconState) {
-  return `${iconState.mode}:${iconState.bucket}:${iconState.hasError ? "error" : "ok"}`;
+  const notice = iconState.hasCompletionNotice ? "notice" : "none";
+  return `${iconState.mode}:${iconState.bucket}:${iconState.hasError ? "error" : "ok"}:${notice}`;
+}
+
+export function snapshotTaskStatuses(tasks = []) {
+  const statuses = new Map();
+  if (!Array.isArray(tasks)) return statuses;
+  for (const task of tasks) {
+    if (task?.gid) statuses.set(task.gid, task.status || "");
+  }
+  return statuses;
+}
+
+export function detectNewCompletions(previousStatuses, tasks = []) {
+  if (!(previousStatuses instanceof Map)) return false;
+  if (!Array.isArray(tasks)) return false;
+  for (const task of tasks) {
+    const gid = task?.gid;
+    if (!gid || task.status !== "complete") continue;
+    const previous = previousStatuses.get(gid);
+    if (previous !== undefined && previous !== "complete") {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function buildTaskActionBody(gid, action, targetPath) {

@@ -4,7 +4,9 @@ import {
   cookieHeaderFromCookies,
   dedupeKeyForUrl,
   deriveIconState,
+  detectNewCompletions,
   iconKey,
+  snapshotTaskStatuses,
   isSupportedDownloadUrl,
   normalizeSettings,
   normalizeUrlForMatch,
@@ -30,6 +32,8 @@ const BROWSER_FALLBACK_TTL_MS = 30000;
 let ws = null;
 let idleDisconnectTimer = null;
 let lastIconKey = "";
+let lastTaskStatuses = null;
+let completionNoticePending = false;
 const iconCache = new Map();
 const requestContextByUrl = new Map();
 const nativeDownloadDedupeByUrl = new Map();
@@ -514,8 +518,31 @@ async function setBadge(hasError) {
   await action.setBadgeText({ text: hasError ? "!" : "" });
 }
 
+function processSnapshotForCompletionNotice(snapshot) {
+  const tasks = Array.isArray(snapshot?.tasks) ? snapshot.tasks : [];
+  const current = snapshotTaskStatuses(tasks);
+  if (lastTaskStatuses === null) {
+    lastTaskStatuses = current;
+    return;
+  }
+  if (detectNewCompletions(lastTaskStatuses, tasks)) {
+    completionNoticePending = true;
+  }
+  lastTaskStatuses = current;
+}
+
+function ackCompletionNotice() {
+  if (!completionNoticePending) return;
+  completionNoticePending = false;
+  lastIconKey = "";
+}
+
 async function setIdleIcon(hasError = false) {
   if (!action) return;
+  if (completionNoticePending) {
+    await updateIconFromSnapshot({ totals: {}, tasks: [] });
+    return;
+  }
   const state = { mode: "idle", bucket: 0, hasError };
   const key = iconKey(state);
   if (lastIconKey !== key) {
@@ -534,9 +561,11 @@ async function setIdleIcon(hasError = false) {
 
 async function updateIconFromSnapshot(snapshot) {
   if (!action) return;
-  const state = deriveIconState(snapshot);
+  processSnapshotForCompletionNotice(snapshot);
+  const baseState = deriveIconState(snapshot);
+  const state = { ...baseState, hasCompletionNotice: completionNoticePending };
   const key = iconKey(state);
-  if (state.mode === "idle") {
+  if (state.mode === "idle" && !state.hasCompletionNotice) {
     await setIdleIcon(state.hasError);
     return;
   }
@@ -589,7 +618,7 @@ function drawIcon(size, state) {
     ctx.fillStyle = "#22c55e";
     roundedRect(ctx, 20, 102, Math.max(8, 88 * (state.bucket / 100)), 10, 5);
     ctx.fill();
-  } else {
+  } else if (state.mode === "active-unknown") {
     ctx.fillStyle = "#38bdf8";
     roundedRect(ctx, 20, 102, 88, 10, 5);
     ctx.fill();
@@ -601,6 +630,16 @@ function drawIcon(size, state) {
       ctx.lineTo(x + 12, 102);
       ctx.stroke();
     }
+  }
+
+  if (state.hasCompletionNotice) {
+    ctx.fillStyle = "#ef4444";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(24, 24, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
 
   if (state.hasError) {
@@ -773,6 +812,13 @@ if (hasChromeRuntime()) {
           await applyNativeDownloadUiFromCurrentSettings();
           sendResponse({ ok: true });
         })
+        .catch(() => sendResponse({ ok: false }));
+      return true;
+    }
+    if (message?.type === "ackCompletionNotice") {
+      ackCompletionNotice();
+      pollOnce()
+        .then(() => sendResponse({ ok: true }))
         .catch(() => sendResponse({ ok: false }));
       return true;
     }

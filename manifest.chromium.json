@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Motrix Next Opt",
   "description": "Shows Motrix Next Opt download progress without opening the main window.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "minimum_chrome_version": "116",
   "action": {
     "default_title": "Motrix Next Opt",

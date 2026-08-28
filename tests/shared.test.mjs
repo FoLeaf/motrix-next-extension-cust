@@ -11,8 +11,10 @@ import {
   cookieHeaderFromCookies,
   dedupeKeyForUrl,
   deriveIconState,
+  detectNewCompletions,
   DOWNLOAD_FILE_EXTENSIONS,
   iconKey,
+  snapshotTaskStatuses,
   isDownloadLikeLink,
   normalizeSettings,
   progressBucket,
@@ -40,7 +42,37 @@ test("deriveIconState returns idle when no active or waiting tasks exist", () =>
     tasks: []
   });
   assert.deepEqual(state, { mode: "idle", bucket: 0, hasError: false });
-  assert.equal(iconKey(state), "idle:0:ok");
+  assert.equal(iconKey(state), "idle:0:ok:none");
+});
+
+test("iconKey includes completion notice suffix", () => {
+  assert.equal(iconKey({ mode: "idle", bucket: 0, hasError: false, hasCompletionNotice: true }), "idle:0:ok:notice");
+});
+
+test("snapshotTaskStatuses maps gid to status", () => {
+  const statuses = snapshotTaskStatuses([
+    { gid: "a", status: "active" },
+    { gid: "b", status: "complete" },
+    { gid: "", status: "active" }
+  ]);
+  assert.equal(statuses.size, 2);
+  assert.equal(statuses.get("a"), "active");
+  assert.equal(statuses.get("b"), "complete");
+});
+
+test("detectNewCompletions ignores first snapshot and already-complete tasks", () => {
+  const previous = snapshotTaskStatuses([{ gid: "1", status: "active" }]);
+  assert.equal(detectNewCompletions(null, [{ gid: "1", status: "complete" }]), false);
+  assert.equal(detectNewCompletions(previous, [{ gid: "2", status: "complete" }]), false);
+  assert.equal(detectNewCompletions(previous, [{ gid: "1", status: "complete" }]), true);
+  assert.equal(
+    detectNewCompletions(previous, [
+      { gid: "1", status: "complete" },
+      { gid: "2", status: "waiting" }
+    ]),
+    true
+  );
+  assert.equal(detectNewCompletions(previous, [{ gid: "1", status: "active" }]), false);
 });
 
 test("deriveIconState returns known progress state for active known-size tasks", () => {

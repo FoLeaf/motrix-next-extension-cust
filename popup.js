@@ -29,6 +29,7 @@ async function init() {
   els.interceptInput.checked = settings.interceptDownloads;
   bindEvents();
   void chrome.runtime.sendMessage({ type: "wake" });
+  void chrome.runtime.sendMessage({ type: "ackCompletionNotice" });
   await refresh();
 }
 
